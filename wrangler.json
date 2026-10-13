@@ -1,0 +1,10 @@
+{
+  "name": "workwith",
+  "compatibility_date": "2026-10-13",
+  "build": {
+    "command": "node scripts/build.mjs"
+  },
+  "assets": {
+    "directory": "./dist"
+  }
+}
