@@ -14,6 +14,23 @@ node scripts/build.mjs
 
 서버 주소는 http://127.0.0.1:4173 입니다. npm run dev, npm test, npm run build도 같은 명령을 실행합니다. 정적 빌드 결과는 dist/입니다. file:// 대신 HTTP 서버로 실행하세요.
 
+## Cloudflare 배포
+
+Cloudflare Workers를 사용하는 경우, 저장소 루트의 `wrangler.json`이 빌드를 실행하고 `dist/`만 업로드합니다. 저장소 루트나 `node_modules/`를 assets 디렉터리로 지정하면 안 됩니다.
+
+Workers 프로젝트의 Git 연동 설정:
+
+| 항목 | 설정 |
+|---|---|
+| 운영 브랜치 | `main` |
+| 루트 디렉터리 | 저장소 루트 (기본값) |
+| 빌드 명령 | `node scripts/build.mjs` 또는 빈 값 (Wrangler가 빌드 실행) |
+| 배포 명령 | `npx wrangler deploy` |
+
+배포 명령에 `--assets .` 또는 저장소 루트 경로를 붙이지 마세요. `wrangler.json`의 name은 Cloudflare에 만든 Worker 이름과 일치해야 합니다. 성공 후 대시보드에 표시된 `https://workwith.<계정 하위 도메인>.workers.dev` 주소를 사용합니다.
+
+Cloudflare Pages를 사용하는 경우에는 프레임워크 None, 빌드 명령 `node scripts/build.mjs`, 출력 디렉터리 `dist`, 운영 브랜치 `main`으로 설정합니다. Pages는 대시보드에 표시된 `*.pages.dev` 주소를 사용합니다. Workers 배포 성공으로 Pages 주소가 생성되는 것은 아닙니다.
+
 ## 기능
 
 - 프로젝트·업무 CRUD, 담당자·상태·우선순위, 공동/개인 업무 통합 조회
