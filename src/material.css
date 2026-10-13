@@ -90,12 +90,6 @@ main { padding: 32px; max-width: 1512px; }
 .page-heading .eyebrow { font-size: 10px; color: var(--md-secondary); }
 .page-heading p { font-size: 13px; line-height: 1.6; }
 .heading-actions .primary { min-height: 48px; border-radius: 16px; padding: 12px 20px; }
-.welcome { padding: 32px; border-radius: 28px; background: var(--md-primary-container); color: var(--md-on-primary-container); }
-.welcome .eyebrow, .welcome p { color: #374f76; }
-.welcome h2 { font-size: 28px; font-weight: 500; }
-.welcome p { font-size: 13px; }
-.welcome-symbol { color: var(--md-primary); transform: none; font-family: inherit; font-size: 88px; }
-.welcome-symbol span { color: #7cacf8; }
 .stats { gap: 16px; }
 .stat { border: 0; border-radius: 20px; padding: 24px; background: var(--md-surface-container-low); }
 .stat > span { font-size: 13px; color: var(--md-on-surface-variant); }
@@ -238,7 +232,6 @@ footer { font-size: 10px; color: var(--muted); border-top: 0; }
   .main { margin: 0; }
   .topbar { min-height: 64px; }
   .demo-banner { margin: 0 24px; }
-  .welcome-symbol { font-size: 70px; }
   .board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 580px) {
@@ -250,10 +243,6 @@ footer { font-size: 10px; color: var(--muted); border-top: 0; }
   .page-heading p { font-size: 12px; }
   .page-heading .eyebrow { font-size: 9px; }
   .heading-actions .primary { min-height: 44px; padding: 10px 12px; font-size: 12px; border-radius: 14px; }
-  .welcome { padding: 24px; border-radius: 24px; }
-  .welcome h2 { font-size: 23px; }
-  .welcome p { font-size: 12px; }
-  .welcome-symbol { display: none; }
   .stats { gap: 12px; }
   .stat { padding: 20px 16px; border-radius: 16px; }
   .stat > span { font-size: 12px; }
@@ -289,4 +278,43 @@ footer { font-size: 10px; color: var(--muted); border-top: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+
+
+/* Dashboard metrics: semantic colour and strong numeric hierarchy. */
+.stats { gap: 16px; margin-bottom: 28px; }
+.stat {
+  --metric-accent: #0b57d0;
+  --metric-fill: #edf3ff;
+  --metric-icon-fill: #d3e3fd;
+  background: var(--metric-fill);
+  border: 1px solid color-mix(in srgb, var(--metric-accent) 18%, transparent);
+  border-top: 4px solid var(--metric-accent);
+  border-radius: 20px;
+  padding: 22px 24px 20px;
+  min-width: 0;
+}
+.metric-week { --metric-accent: #146c55; --metric-fill: #eef8f3; --metric-icon-fill: #c9eadb; }
+.metric-review { --metric-accent: #735200; --metric-fill: #fff8e7; --metric-icon-fill: #f7e4af; }
+.metric-late { --metric-accent: #b3261e; --metric-fill: #fff1f0; --metric-icon-fill: #f9dedc; }
+.stat-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.stat-heading h2 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: -.2px; color: var(--md-on-surface); }
+.stat-icon { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--metric-icon-fill); color: var(--metric-accent); flex-shrink: 0; }
+.stat-icon .md-icon { width: 22px; height: 22px; }
+.stat-number { display: flex; align-items: baseline; gap: 8px; margin: 20px 0 14px; }
+.stat .stat-number strong { font-size: 48px; line-height: 1; font-weight: 600; letter-spacing: -1.5px; color: var(--metric-accent); margin: 0; font-variant-numeric: tabular-nums; }
+.stat-number > span { font-size: 14px; color: var(--md-on-surface-variant); }
+.stat-caption { font-size: 11px; line-height: 1.6; margin: 0; color: var(--md-on-surface-variant); }
+@media (min-width: 851px) and (max-width: 1150px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 580px) {
+  .stats { gap: 12px; }
+  .stat { padding: 16px; border-radius: 16px; }
+  .stat-heading { gap: 8px; }
+  .stat-heading h2 { font-size: 12px; }
+  .stat-icon { width: 32px; height: 32px; border-radius: 10px; }
+  .stat-icon .md-icon { width: 18px; height: 18px; }
+  .stat .stat-number strong { font-size: 40px; }
+  .stat-caption { font-size: 10px; }
 }
