@@ -35,6 +35,21 @@ export class SharedStore{
   if(typeof password!=='string'||password.length<8||password.length>128)throw Error('새 비밀번호는 8~128자로 입력하세요.');
   await this.http('/auth/v1/user',{password},await this.access(),'PUT');this.recoveryPending=false;this.storage.removeItem('workwith-recovery-pending');
  }
+ async changePassword(currentPassword,password){
+  if(this.passwordChanging)throw Error('비밀번호 변경이 진행 중입니다.');
+  if(typeof password!=='string'||password.length<8||password.length>128)throw Error('새 비밀번호는 8~128자로 입력하세요.');
+  if(!currentPassword)throw Error('현재 비밀번호를 입력하세요.');
+  if(currentPassword===password)throw Error('현재 비밀번호와 다른 비밀번호를 입력하세요.');
+  this.passwordChanging=true;
+  try{
+   const user=await this.http('/auth/v1/user',undefined,await this.access());
+   if(!user.id||!user.email)throw Error('로그인 계정을 확인할 수 없습니다.');
+   const session=await this.http('/auth/v1/token?grant_type=password',{email:user.email,password:currentPassword});
+   if(session.user?.id!==user.id)throw Error('현재 로그인 계정과 일치하지 않습니다.');
+   this.saveSession(session);
+   await this.http('/auth/v1/user',{password},await this.access(),'PUT');
+  }finally{this.passwordChanging=false;}
+ }
  async login(email,password){
   this.recoveryPending=false;this.storage.removeItem('workwith-recovery-pending');
   const s=await this.http('/auth/v1/token?grant_type=password',{email,password});this.saveSession(s);

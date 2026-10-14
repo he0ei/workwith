@@ -4,6 +4,24 @@ import {SharedStore} from '../src/shared-store.js';
 const config={url:'https://test-project.supabase.co',key:'sb_publishable_test'};
 const memory=()=>{const values=new Map();return {values,getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};};
 const session=()=>({access_token:'access',refresh_token:'refresh',expires_at:Math.floor(Date.now()/1000)+3600});
+test('signed-in password change verifies current password and same identity before PUT, stores no password',async()=>{
+ const storage=memory(),calls=[];storage.setItem('workwith-supabase-session',JSON.stringify(session()));
+ const store=new SharedStore(async(url,o)=>{calls.push({url,o});if(url.includes('grant_type=password'))return Response.json({...session(),user:{id:'u1'},access_token:'verified'});return Response.json({id:'u1',email:'member@example.com'});},storage,config);
+ await store.changePassword('temporary-test','replacement-test');
+ assert.equal(calls.length,3);assert.equal(calls[0].o.method,'GET');assert.deepEqual(JSON.parse(calls[1].o.body),{email:'member@example.com',password:'temporary-test'});assert.equal(calls[2].o.method,'PUT');assert.equal(calls[2].o.headers.Authorization,'Bearer verified');assert.deepEqual(JSON.parse(calls[2].o.body),{password:'replacement-test'});
+ const saved=JSON.stringify([...storage.values]);for(const secret of ['temporary-test','replacement-test','member@example.com'])assert.ok(!saved.includes(secret));
+});
+test('password change rejects bad current password and identity mismatch without updating account',async()=>{
+ for(const mode of ['denied','mismatch']){
+  const storage=memory(),calls=[];storage.setItem('workwith-supabase-session',JSON.stringify(session()));
+  const store=new SharedStore(async(url,o)=>{calls.push(o.method);if(url.includes('grant_type=password'))return mode==='denied'?Response.json({msg:'Invalid login credentials'},{status:400}):Response.json({...session(),user:{id:'other'}});return Response.json({id:'u1',email:'member@example.com'});},storage,config);
+  await assert.rejects(store.changePassword('temporary-test','replacement-test'));assert.ok(!calls.includes('PUT'));assert.equal(store.passwordChanging,false);assert.equal(store.session.access_token,'access');
+ }
+});
+test('signed-in password change validates input and requires login',async()=>{
+ const store=new SharedStore(()=>{assert.fail('no request expected');},memory(),config);
+ await assert.rejects(store.changePassword('old','short'),/8~128/);await assert.rejects(store.changePassword('','replacement-test'),/현재 비밀번호/);await assert.rejects(store.changePassword('same-password','same-password'),/다른 비밀번호/);await assert.rejects(store.changePassword('temporary-test','replacement-test'),/로그인/);
+});
 test('Supabase login uses email Auth and stores only session credentials',async()=>{const storage=memory(),calls=[];const store=new SharedStore(async(url,options)=>{calls.push({url,options});if(url.includes('/auth/'))return Response.json(session());return Response.json({user:'sj',state:{tasks:[]},versions:{}});},storage,config);await store.login('member@example.com','test-password');assert.equal(calls[0].url,config.url+'/auth/v1/token?grant_type=password');assert.equal(JSON.parse(calls[0].options.body).email,'member@example.com');assert.equal(calls[1].options.headers.Authorization,'Bearer access');const raw=storage.getItem('workwith-supabase-session');assert.ok(!raw.includes('test-password'));assert.ok(!raw.includes('member@example.com'));assert.ok(!raw.includes('tasks'));});
 test('expiry refresh is deduplicated and updates current expiry before concurrent requests',async()=>{const storage=memory();storage.setItem('workwith-supabase-session',JSON.stringify({...session(),expires_at:0}));let refreshes=0;const store=new SharedStore(async(url,options)=>{if(url.includes('refresh_token')){refreshes++;return Response.json({...session(),access_token:'new-access'});}assert.equal(options.headers.Authorization,'Bearer new-access');return Response.json({revision:2});},storage,config);await Promise.all([store.version(),store.version()]);assert.equal(refreshes,1);await store.version();assert.equal(refreshes,1);});
 test('unconfigured or logged-out workspace cannot write; auth failure clears expired refresh token',async()=>{const storage=memory();const missing=new SharedStore(()=>{throw Error('must not call');},storage,{url:'',key:''});await assert.rejects(missing.login('a@b.com','pw'),/설정이 필요/);const store=new SharedStore(async()=>Response.json({message:'expired'},{status:401}),storage,config);await assert.rejects(store.read(),err=>err.status===401);store.saveSession({...session(),expires_at:1});await assert.rejects(store.read(),err=>err.status===401);assert.equal(store.session,null);assert.equal(storage.values.size,0);});
