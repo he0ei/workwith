@@ -4,3 +4,8 @@ await writeFile(new URL('model.js',shared),await readFile(new URL('../src/model.
 await writeFile(new URL('workspace.js',shared),(await readFile(new URL('../server/workspace.js',import.meta.url),'utf8')).replace("'../src/model.js'","'./model.js'"));
 await writeFile(new URL('supabase-handler.js',shared),await readFile(new URL('../server/supabase-handler.js',import.meta.url)));
 console.log('Supabase Edge Function shared modules generated from the canonical model.');
+
+const model=(await readFile(new URL('../src/model.js',import.meta.url),'utf8')).replace(/^export /gm,'');
+const core=(await readFile(new URL('../server/workspace.js',import.meta.url),'utf8')).replace(/^import .*;\n/gm,'').replace(/^export /gm,'');
+const handler=(await readFile(new URL('../server/supabase-handler.js',import.meta.url),'utf8')).replace(/^import .*;\n/gm,'').replace(/^export /gm,'');
+await writeFile(new URL('dashboard.ts',shared),model+'\n'+core+'\n'+handler+"\nDeno.serve(request=>handle(request,{APP_ORIGIN:'https://he0ei.github.io',SUPABASE_URL:Deno.env.get('SUPABASE_URL'),SUPABASE_SERVICE_ROLE_KEY:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}));\n");

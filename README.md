@@ -46,4 +46,4 @@ SUPABASE_URL=https://your-project.supabase.co SUPABASE_PUBLISHABLE_KEY=sb_publis
 
 ## 전환 상태
 
-사용자 승인에 따라 GitHub 저장소를 공개로 변경하고 Pages의 GitHub Actions 배포 설정을 활성화했습니다. 유료 업그레이드는 하지 않았습니다. Supabase 프로젝트 연결도 아직 필요합니다. 기존 Cloudflare Worker/D1은 원격에서 삭제하지 않았습니다. 준비가 끝나기 전에 이 PR을 병합하지 않습니다.
+사용자 승인에 따라 GitHub 저장소를 공개로 변경하고 Pages의 GitHub Actions 배포 설정을 활성화했습니다. 유료 업그레이드는 하지 않았습니다. Supabase Free의 DB/RLS/Edge 함수 적용과 GitHub 공개 변수 연결을 완료했습니다. 팀원 계정 등록·PR 병합·실제 Pages 배포와 동기화 검증이 남았습니다. 기존 Cloudflare Worker/D1은 원격에서 삭제하지 않았습니다. 준비가 끝나기 전에 이 PR을 병합하지 않습니다.

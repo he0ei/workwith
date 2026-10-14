@@ -62,3 +62,9 @@ Realtime은 사용하지 않습니다. revision만 30초/60초 확인하고 변�
 ## 검증 필요 항목
 
 호스팅 정책/계정 연결 후 실제 Supabase에서 Auth 로그인, 외부 회원 차단, anonymous REST 차단, 타인의 private 레코드 직접 SELECT 및 수정 차단, Edge JWT/CORS, DB 트랜잭션, 세션 갱신, Pages 경로의 CSS/JS 로딩, 실제 두 컴퓨터의 수정 반영과 충돌을 확인해야 합니다. 로컬 PGlite PostgreSQL 검증은 실제 Supabase 배포 확인을 대체하지 않습니다.
+
+## 적용 결과
+
+지정된 Free 프로젝트에 SQL 스키마와 RLS를 적용하고 workspace 함수를 배포했습니다. 대시보드 배포용 dashboard.ts는 build-functions.mjs에서 정본 모델·서버 handler를 합쳐 생성하며 Pages origin을 https://he0ei.github.io로 한정합니다. 별도의 APP_ORIGIN Secret 등록 없이 같은 검증을 수행합니다. CLI의 여러 파일 배포 방식은 위 환경변수 설정을 사용합니다.
+
+실제 공개 URL/키를 GitHub Variables에 등록했고 미로그인 API 401을 확인했습니다. Cloudflare의 운영/미리보기 Git 빌드를 중지했습니다. 기존 운영 자원을 삭제하지 않았으며 Pages 성공 배포와 사용자 계정 검증은 아직 필요합니다.

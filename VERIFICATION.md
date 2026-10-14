@@ -14,3 +14,15 @@
 실제 Supabase 프로젝트/계정 연결, SQL 적용, Edge 배포, GitHub Pages 실제 배포, 실제 여러 컴퓨터의 동기화는 아직 미수행이다. 기존 Cloudflare 운영 Worker/D1 DB는 변경·삭제하지 않았다. 사용자 승인으로 저장소 공개와 Pages Actions 설정을 완료했다. Supabase URL 변수도 준비했으며 공개 키·실제 프로젝트 접근 연결은 대기 중이다.
 
 빌드 추가 검증: 공개 키로 프로젝트 한정 CSP·정적 산출물 확인. sb_secret 형태의 키는 의도대로 빌드에서 거부됨. 실제 프로젝트 공개 키는 아직 미등록이며 마지막 로컬 산출물은 미연결 상태로 다시 생성함.
+
+## 실제 서비스 준비 확인
+
+- 사용자 브라우저 로그인 후 Supabase 조직의 FREE 요금제와 Healthy 프로젝트 확인.
+- 실제 SQL Editor에서 migration 적용 성공. workwith_members/workwith_records/workwith_workspace의 RLS=true 확인.
+- workspace Edge Function 배포 성공. 함수 내부에서 Auth 서버 검증을 수행하며 legacy-only JWT 검증은 비활성화하여 최신 JWT와 호환.
+- 실제 공개 키 요청: DB snapshot RPC는 401 permission denied, 미로그인 Edge 변경은 401 로그인 필요 응답.
+- GitHub Actions에 실제 SUPABASE_URL과 공개 publishable key 변수 등록. 비밀키는 등록하지 않음.
+- Cloudflare 운영·미리보기 자동 Git 빌드 중지 설정. 기존 Worker/D1 원격 데이터는 삭제하지 않음.
+- 아직 실제 팀원 Auth 계정/UUID 매핑·PR 병합·Pages 배포·실제 두 컴퓨터의 수정은 완료하지 않음.
+
+Supabase 공개 신규 가입을 비활성화했고 이메일 인증 설정은 유지했다. 사용자 계정은 관리자 등록 방식만 사용한다.
