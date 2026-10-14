@@ -318,3 +318,5 @@ footer { font-size: 10px; color: var(--muted); border-top: 0; }
   .stat .stat-number strong { font-size: 40px; }
   .stat-caption { font-size: 10px; }
 }
+
+.auth-page{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--surface,#f5f7fb)}.auth-panel{width:min(100%,480px)}.auth-panel form{display:grid;gap:16px;margin-top:24px}.auth-panel h1{font-size:26px;margin-top:28px}.auth-panel #login-error{color:#ba1a1a;white-space:pre-wrap}.auth-panel input{width:100%}

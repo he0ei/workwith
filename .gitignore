@@ -7,3 +7,8 @@ backups/
 .DS_Store
 .wrangler/
 .dev.vars*
+
+.dev.vars*
+.env*
+.wrangler/
+*.sqlite*
