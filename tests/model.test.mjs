@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {USERS,empty,change,validate,visibleTasks,filterTasks,kpiProgress,parseMinutes,registerDrafts,safeURL,dateOK} from '../src/model.js';
+import {USERS,empty,change,validate,visibleTasks,participates,filterTasks,kpiProgress,parseMinutes,registerDrafts,safeURL,dateOK} from '../src/model.js';
 import {sample} from './fixtures.mjs';
 const task=(v={})=>({id:'t1',title:'업무',note:'메모',owner:'sj',assignee:'sj',visibility:'shared',projectId:'',status:'예정',priority:'보통',start:'2026-10-12',due:'2026-10-13',hours:2,completedAt:'',url:'',kpiId:'',dependencies:[],...v});
 const save=(s,t,actor='sj',reason='')=>change(s,{type:'task.save',value:t,reason},actor);
@@ -24,3 +24,6 @@ test('프로젝트 삭제 시 연결 업무/KPI/결과물 제거 및 회의록 �
 test('안전하지 않은 URL 차단',()=>{for(const url of ['javascript:alert(1)','data:text/html,test','file:///tmp/test','https://user:password@example.com'])assert.equal(safeURL(url),'');assert.ok(safeURL('https://example.com'));assert.throws(()=>save(empty(),task({url:'javascript:alert(1)'})),/링크/);});
 test('손상된 저장 데이터와 중복 ID 거부, 원본 자동 삭제 없음',()=>{assert.throws(()=>validate({...empty(),tasks:[task(),task()]}),/ID/);assert.throws(()=>validate({...empty(),version:2}),/지원/);});
 test('합성 예시와 저장 데이터 왕복 검증',()=>{assert.equal(USERS.length,4);const s=sample();assert.deepEqual(validate(JSON.parse(JSON.stringify(s))),s);assert.equal(visibleTasks(s,'sy').filter(t=>t.visibility==='private').length,0);});
+
+test('협업자를 저장하고 담당자와 협업자 모두 내 업무에 포함, 중복 집계하지 않음',()=>{let s=save(empty(),task({collaborators:['sy','jh']}));assert.equal(s.tasks.length,1);for(const user of ['sj','sy','jh'])assert.ok(participates(s.tasks[0],user));assert.equal(participates(s.tasks[0],'ceo'),false);const oldClient={...s.tasks[0]};delete oldClient.collaborators;s=save(s,{...oldClient,status:'진행 중'});assert.deepEqual(s.tasks[0].collaborators,['sy','jh']);});
+test('협업자 미등록 기존 업무 호환, 잘못된 협업자와 개인 업무 공유 차단',()=>{assert.equal(participates(task(),'sj'),true);for(const collaborators of [['sy','sy'],['unknown'],[''],['sj'],'sy'])assert.throws(()=>save(empty(),task({collaborators})),/협업자/);assert.throws(()=>save(empty(),task({visibility:'private',collaborators:['sy']})),/개인 업무/);assert.equal(visibleTasks({tasks:[task({visibility:'private'})]},'sy').length,0);});
