@@ -108,3 +108,5 @@ dialog{width:680px;border:1px solid #dfe1e6;border-radius:8px;padding:24px;color
 .collaborator-chip { padding: 3px 8px; border-radius: 4px; background: #e9f2ff; color: #0747a6; font-weight: 500; }
 .collaborator-options { display: flex; flex-wrap: wrap; gap: 12px; }
 .collaborator-options small { width: 100%; line-height: 1.5; }
+.task-people { display: flex; flex-wrap: wrap; gap: 8px; }
+.person-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: #44546f; }

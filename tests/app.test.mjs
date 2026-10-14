@@ -17,7 +17,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
  globalThis.setTimeout=(fn,delay)=>{const id=++timerId;timers.set(id,{fn,delay});return id;};globalThis.clearTimeout=id=>timers.delete(id);
 
  globalThis.confirm=()=>true;
- globalThis.FormData=class{constructor(form){this.entries=Object.entries(form.values||{});}get(k){return this.entries.find(([key])=>key===k)?.[1]??null;}getAll(k){return this.entries.filter(([key])=>key===k).map(([,v])=>v);}has(k){return this.entries.some(([key])=>key===k);}[Symbol.iterator](){return this.entries[Symbol.iterator]();}};
+ globalThis.FormData=class{constructor(form){this.entries=Object.entries(form.values||{});}get(k){return this.entries.find(([key])=>key===k)?.[1]??null;}getAll(k){return this.entries.filter(([key])=>key===k).flatMap(([,v])=>Array.isArray(v)?v:[v]);}has(k){return this.entries.some(([key])=>key===k);}[Symbol.iterator](){return this.entries[Symbol.iterator]();}};
  const click=(attr,value,id='')=>listeners.click({target:{closest:selector=>selector===`[${attr}]`?{dataset:{[{'data-nav':'nav','data-action':'action','data-filter':'filter'}[attr]]:value,id}}:null}});
  const submit=(kind,values,id)=>listeners.submit({preventDefault(){},target:{id:'edit-form',dataset:{kind,id},values}});
  const read=async()=>{const result=await pg.repository.load();return Object.entries(result.state).filter(([,v])=>Array.isArray(v)).flatMap(([entity,values])=>values.map(x=>({entity,payload:JSON.stringify(x)})));};
@@ -54,10 +54,17 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
  });
  await t.test('shared task collaborator persists and is included in my board, calendar and member filter',async()=>{
   await click('data-action','task');await submit('task',{title:'협업 검증',visibility:'shared',assignee:'sy',collaborator:'sj',projectId:'p',status:'예정',priority:'보통',start:'',due:'',hours:'1',kpiId:'',url:'',note:''},'t-collab');assert.deepEqual((await item('tasks','t-collab')).collaborators,['sj']);
-  await click('data-nav','mine');assert.match(nodes.get('#app').innerHTML,/협업 검증/);assert.match(nodes.get('#app').innerHTML,/task-project-label/);assert.match(nodes.get('#app').innerHTML,/collaborator-chip/);
+  await click('data-nav','mine');assert.match(nodes.get('#app').innerHTML,/협업 검증/);assert.match(nodes.get('#app').innerHTML,/task-project-label/);assert.match(nodes.get('#app').innerHTML,/person-chip/);
   await click('data-nav','calendar');assert.match(nodes.get('#app').innerHTML,/협업 검증/);await click('data-nav','collab');await listeners.change({target:{id:'assignee-filter',value:'sj',dataset:{}}});assert.match(nodes.get('#app').innerHTML,/협업 검증/);
   await click('data-action','task','t-collab');assert.match(nodes.get('#editor').innerHTML,/name="collaborator" value="sj" checked/);
   await click('data-action','close');
+ });
+ await t.test('parallel people picker saves equal participants and paused stage',async()=>{
+  await click('data-action','task');const editor=nodes.get('#editor').innerHTML;assert.ok(!editor.includes('주 담당자'));assert.match(editor,/함께 맡는 사람 모두 선택/);
+  const values={title:'동등 공동 업무',visibility:'shared',projectId:'p',status:'보류 중',priority:'보통',start:'',due:'',hours:'1',kpiId:'',url:'',note:'',collaborator:['jh','sy']};
+  await submit('task',values,'parallel-task');const saved=await item('tasks','parallel-task');assert.equal(saved.assignee,'');assert.deepEqual(saved.collaborators,['jh','sy']);assert.equal(saved.status,'보류 중');
+  await click('data-nav','collab');assert.match(nodes.get('#app').innerHTML,/보류 중/);assert.ok(!nodes.get('#app').innerHTML.includes('검토 요청'));
+  await listeners.change({target:{id:'assignee-filter',value:'unassigned',dataset:{}}});assert.ok(!nodes.get('#app').innerHTML.includes('동등 공동 업무'));
  });
  await t.test('poll refresh keeps open editor and stale save is rejected without overwriting input',async()=>{
   await click('data-action','task','t');const html=nodes.get('#editor').innerHTML;
