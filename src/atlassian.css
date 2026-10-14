@@ -112,3 +112,6 @@ dialog{width:680px;border:1px solid #dfe1e6;border-radius:8px;padding:24px;color
 .person-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: #44546f; }
 
 .minutes-layout.archive-only { grid-template-columns: minmax(0, 1fr); }
+#minutes-form { display: grid; gap: 16px; }
+#minutes-form label { display: grid; gap: 8px; }
+#minutes-form button { justify-self: start; }
