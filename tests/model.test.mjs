@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {USERS,empty,change,validate,visibleTasks,participates,taskPeople,taskStatus,filterTasks,kpiProgress,parseMinutes,registerDrafts,safeURL,dateOK} from '../src/model.js';
+import {USERS,empty,change,validate,visibleTasks,participates,taskPeople,taskStatus,statusLabel,filterTasks,kpiProgress,parseMinutes,registerDrafts,safeURL,dateOK} from '../src/model.js';
 import {sample} from './fixtures.mjs';
 const task=(v={})=>({id:'t1',title:'업무',note:'메모',owner:'sj',assignee:'sj',visibility:'shared',projectId:'',status:'예정',priority:'보통',start:'2026-10-12',due:'2026-10-13',hours:2,completedAt:'',url:'',kpiId:'',dependencies:[],...v});
 const save=(s,t,actor='sj',reason='')=>change(s,{type:'task.save',value:t,reason},actor);
@@ -29,4 +29,6 @@ test('협업자를 저장하고 담당자와 협업자 모두 내 업무에 포�
 test('협업자 미등록 기존 업무 호환, 잘못된 협업자와 개인 업무 공유 차단',()=>{assert.equal(participates(task(),'sj'),true);for(const collaborators of [['sy','sy'],['unknown'],[''],['sj'],'sy'])assert.throws(()=>save(empty(),task({collaborators})),/협업자/);assert.throws(()=>save(empty(),task({visibility:'private',collaborators:['sy']})),/개인 업무/);assert.equal(visibleTasks({tasks:[task({visibility:'private'})]},'sy').length,0);});
 
 test('완전 병렬 담당자는 단일 업무로 저장하고 기존 담당자·협업자를 동등하게 조회',()=>{const s=save(empty(),task({assignee:'',collaborators:['jh','sy']}));assert.deepEqual(taskPeople(s.tasks[0]),['sy','jh']);assert.ok(participates(s.tasks[0],'jh'));assert.ok(participates(s.tasks[0],'sy'));assert.equal(s.tasks.length,1);assert.deepEqual(taskPeople(task({assignee:'jh',collaborators:['sy']})),['sy','jh']);});
-test('기존 검토 요청 상태는 보류 중으로 호환하고 저장시 새 상태 사용',()=>{const legacy=task({status:'검토 요청'});assert.equal(taskStatus(legacy.status),'보류 중');assert.ok(validate({...empty(),tasks:[legacy]}));assert.equal(save({...empty(),tasks:[legacy]},legacy).tasks[0].status,'보류 중');assert.equal(save(empty(),task({status:'보류 중'})).tasks[0].status,'보류 중');});
+test('기존 검토 요청 상태는 보류 중으로 호환하고 저장시 새 상태 사용',()=>{const legacy=task({status:'검토 요청'});assert.equal(taskStatus(legacy.status),'검토 요청');assert.equal(statusLabel(legacy.status),'보류 중');assert.ok(validate({...empty(),tasks:[legacy]}));assert.equal(save({...empty(),tasks:[legacy]},legacy).tasks[0].status,'검토 요청');assert.equal(save(empty(),task({status:'보류 중'})).tasks[0].status,'검토 요청');});
+
+test('상태 전용 변경은 개인 공개 범위·담당자·프로젝트·메모 등 다른 업무 값을 유지',()=>{let s=save(empty(),task({visibility:'private',note:'보존할 메모'}));const original=s.tasks[0];s=change(s,{type:'task.status',id:original.id,status:'진행 중'},'sj');assert.deepEqual({...s.tasks[0],status:original.status},original);assert.throws(()=>change(s,{type:'task.status',id:original.id,status:'완료'},'sy'),/상태/);});

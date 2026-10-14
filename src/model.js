@@ -1,6 +1,7 @@
 export const USERS = [{id:'ceo',name:'대표님',initial:'대'},{id:'sj',name:'정승재',initial:'재'},{id:'sy',name:'양승연',initial:'연'},{id:'jh',name:'최재희',initial:'희'}];
-export const STATUSES=['예정','진행 중','보류 중','완료'];
-export const taskStatus=status=>status==='검토 요청'?'보류 중':status;
+export const STATUSES=['예정','진행 중','검토 요청','완료'];
+export const taskStatus=status=>status==='보류 중'?'검토 요청':status;
+export const statusLabel=status=>taskStatus(status)==='검토 요청'?'보류 중':status;
 export const PRIORITIES=['높음','보통','낮음'];
 export const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());
 export const uid=()=>crypto.randomUUID();
@@ -51,6 +52,10 @@ export function filterTasks(tasks,filter,date=today()){
 function log(s,actor,message,entity={}){s.history.push({id:uid(),at:new Date().toISOString(),actor,message,visibility:entity.visibility||'shared',owner:entity.owner||'',projectId:entity.projectId||entity.id&&s.projects.some(p=>p.id===entity.id)&&entity.id||''});}
 export function change(state,action,actor){
  required(USERS.some(u=>u.id===actor),'사용자를 선택하세요.');const s=structuredClone(state),v=action.value;
+ if(action.type==='task.status'){
+  const task=s.tasks.find(t=>t.id===action.id);required(task&&visible(task,actor),'상태를 변경할 수 없는 업무입니다.');
+  return change(state,{type:'task.save',value:{...task,status:taskStatus(action.status)}},actor);
+ }
  if(action.type==='task.save'){
   const old=s.tasks.find(t=>t.id===v.id);required(!old||visible(old,actor),'다른 사용자의 개인 업무를 수정할 수 없습니다.');
   required(v.visibility!=='private'||v.owner===actor,'다른 사용자의 개인 업무를 생성할 수 없습니다.');

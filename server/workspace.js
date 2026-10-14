@@ -10,7 +10,7 @@ export async function mutate(repository,body,actor){
  if(!USERS.some(u=>u.id===actor))throw new ApiError(403,'등록된 팀원만 접근할 수 있습니다.');
  if(!body||!Number.isInteger(body.revision)||body.revision<0)throw new ApiError(400,'저장 버전이 필요합니다.');
  const a=body.action,batch=a?.type==='drafts.register',key=map[a?.type?.split('.')[0]];
- if(!batch&&(!key||!['save','delete'].includes(a?.type?.split('.')[1])))throw new ApiError(400,'지원하지 않는 변경입니다.');
+ if(!batch&&(!key||!['save','delete'].includes(a?.type?.split('.')[1])&&a?.type!=='task.status'))throw new ApiError(400,'지원하지 않는 변경입니다.');
  for(let retry=0;retry<3;retry++){
   const before=await repository.load(),s=validate(before.state),id=a?.value?.id||a?.id;
   if(!batch){

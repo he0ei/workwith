@@ -62,9 +62,17 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
  await t.test('parallel people picker saves equal participants and paused stage',async()=>{
   await click('data-action','task');const editor=nodes.get('#editor').innerHTML;assert.ok(!editor.includes('주 담당자'));assert.match(editor,/함께 맡는 사람 모두 선택/);
   const values={title:'동등 공동 업무',visibility:'shared',projectId:'p',status:'보류 중',priority:'보통',start:'',due:'',hours:'1',kpiId:'',url:'',note:'',collaborator:['jh','sy']};
-  await submit('task',values,'parallel-task');const saved=await item('tasks','parallel-task');assert.equal(saved.assignee,'');assert.deepEqual(saved.collaborators,['jh','sy']);assert.equal(saved.status,'보류 중');
-  await click('data-nav','collab');assert.match(nodes.get('#app').innerHTML,/보류 중/);assert.ok(!nodes.get('#app').innerHTML.includes('검토 요청'));
+  await submit('task',values,'parallel-task');const saved=await item('tasks','parallel-task');assert.equal(saved.assignee,'');assert.deepEqual(saved.collaborators,['jh','sy']);assert.equal(saved.status,'검토 요청');
+  await click('data-nav','collab');assert.match(nodes.get('#app').innerHTML,/보류 중/);assert.ok(!/>검토 요청</.test(nodes.get('#app').innerHTML));
   await listeners.change({target:{id:'assignee-filter',value:'unassigned',dataset:{}}});assert.ok(!nodes.get('#app').innerHTML.includes('동등 공동 업무'));
+ });
+ await t.test('status-only change keeps private card visible in completed filter and preserves every other field',async()=>{
+  const before=await item('tasks','t');await listeners.change({target:{id:'',dataset:{status:'t'},value:'완료'}});
+  await click('data-nav','mine');await click('data-filter','done');assert.match(nodes.get('#app').innerHTML,/data-drag-task="t"/);
+  const completed=await item('tasks','t');await listeners.change({target:{id:'',dataset:{status:'t'},value:'진행 중'}});
+  const updated=await item('tasks','t');assert.equal(updated.visibility,'private');assert.deepEqual({...updated,status:completed.status,completedAt:completed.completedAt},completed);assert.match(nodes.get('#app').innerHTML,/data-drag-task="t"/);assert.equal(nodes.get('#toast').textContent,'상태를 변경했습니다.');
+  await click('data-filter','done');assert.ok(!nodes.get('#app').innerHTML.includes('data-drag-task="t"'));
+  await click('data-nav','dashboard');assert.match(nodes.get('#app').innerHTML,/진행 중 업무/);assert.ok(!nodes.get('#app').innerHTML.includes('이번 주에 집중할 업무'));assert.ok(!nodes.get('#app').innerHTML.includes('이번 주 업무'));assert.match(nodes.get('#app').innerHTML,new RegExp(before.title));
  });
  await t.test('poll refresh keeps open editor and stale save is rejected without overwriting input',async()=>{
   await click('data-action','task','t');const html=nodes.get('#editor').innerHTML;
