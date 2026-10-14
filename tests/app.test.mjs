@@ -22,6 +22,13 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
  const submit=(kind,values,id)=>listeners.submit({preventDefault(){},target:{id:'edit-form',dataset:{kind,id},values}});
  const read=async()=>{const result=await pg.repository.load();return Object.entries(result.state).filter(([,v])=>Array.isArray(v)).flatMap(([entity,values])=>values.map(x=>({entity,payload:JSON.stringify(x)})));};
  const item=async(entity,id)=>{const result=await pg.repository.load();return result.state[entity].find(x=>x.id===id);};
+ const archiveAndReview=async values=>{
+  const before=await pg.repository.load();
+  await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{...values,projectId:values.projectId?.startsWith('__')?'':values.projectId}}});
+  const archived=await pg.repository.load();assert.equal(archived.state.projects.length,before.state.projects.length);assert.equal(archived.state.tasks.length,before.state.tasks.length);assert.equal(archived.state.minutes.length,before.state.minutes.length+1);assert.ok(!nodes.get('#app').innerHTML.includes('id="draft-form"'));
+  const m=archived.state.minutes.find(m=>!before.state.minutes.some(old=>old.id===m.id));await click('data-action','minutes-review',m.id);
+  if(values.projectId?.startsWith('__'))await listeners.submit({preventDefault(){},target:{id:'minutes-review-options',values:{projectId:values.projectId}}});
+ };
  await start(store);
  await t.test('empty dashboard shows real login user and shared status',()=>{assert.match(nodes.get('#app').innerHTML,/공유 DB 연결/);assert.ok(!nodes.get('#app').innerHTML.includes('시연 사용자'));assert.ok([...timers.values()].some(x=>x.delay===30000));});
  await t.test('project and private task save to SQL, not localStorage',async()=>{
@@ -82,25 +89,30 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await submit('task',{...current,title:'unsaved input',hours:'1'},'t');assert.match(nodes.get('#form-error').textContent,/다른 사람이 먼저 수정/);assert.equal((await item('tasks','t')).title,'other update');assert.equal(nodes.get('#editor').open,true);
  });
  await t.test('hidden tabs cancel polling and visibility refresh does not close editor',async()=>{document.hidden=true;listeners.visibilitychange();assert.ok(![...timers.values()].some(x=>x.delay===30000));document.hidden=false;listeners.visibilitychange();assert.ok([...timers.values()].some(x=>x.delay===30000));assert.equal(nodes.get('#editor').open,true);await click('data-action','close');});
+ await t.test('pasting minutes never parses automatically; archive-only saves preserve original without tasks',async()=>{
+  await click('data-nav','minutes');const body='후속 업무\n양승연: 검증 자료 정리하기';nodes.set('#minutes-form',{values:{title:'원문 보관 검증',body,projectId:''}});listeners.input({target:{id:'',closest:selector=>selector==='#minutes-form'}});assert.ok(![...timers.values()].some(t=>t.delay===350));assert.ok(!nodes.get('#app').innerHTML.includes('id="draft-form"'));
+  const before=await pg.repository.load();await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'원문 보관 검증',body,projectId:''}}});const after=await pg.repository.load();assert.equal(after.state.tasks.length,before.state.tasks.length);assert.equal(after.state.projects.length,before.state.projects.length);const m=after.state.minutes.find(m=>m.title==='원문 보관 검증');assert.equal(m.body,body);assert.equal(m.projectId,'');assert.ok(!nodes.get('#app').innerHTML.includes('id="draft-form"'));assert.match(nodes.get('#app').innerHTML,/회의록 아카이브/);
+  await click('data-nav','dashboard');await click('data-nav','minutes');assert.match(nodes.get('#app').innerHTML,/원문 보관 검증/);
+ });
  await t.test('meeting draft review registers tasks and minutes in one transaction',async()=>{
-  await click('data-nav','minutes');await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'meeting',projectId:'p',body:'meeting task | | | 보통'}}});assert.match(nodes.get('#app').innerHTML,/담당자 확인 필요/);
+  await click('data-nav','minutes');await archiveAndReview({title:'meeting',projectId:'p',body:'meeting task | | | 보통'});assert.match(nodes.get('#app').innerHTML,/담당자 확인 필요/);
   await listeners.submit({preventDefault(){},target:{id:'draft-form',values:{'title-0':'reviewed task','assignee-0':'jh','due-0':'','priority-0':'보통','kpi-0':'','target-0':'','unit-0':'','include-0':'on',acknowledged:'on'}}});assert.ok((await read()).some(x=>x.entity==='tasks'&&JSON.parse(x.payload).title==='reviewed task'));assert.ok((await read()).some(x=>x.entity==='minutes'));
  });
  await t.test('meeting review creates a new project and opens its linked task detail',async()=>{
-  await click('data-nav','minutes');await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'new meeting',projectId:'__new__',body:'프로젝트: 새 캠페인\n업무:\n- 최재희: 콘텐츠 발행'}}});assert.match(nodes.get('#app').innerHTML,/value="새 캠페인"/);
+  await click('data-nav','minutes');await archiveAndReview({title:'new meeting',projectId:'__new__',body:'프로젝트: 새 캠페인\n업무:\n- 최재희: 콘텐츠 발행'});assert.match(nodes.get('#app').innerHTML,/value="새 캠페인"/);
   await listeners.submit({preventDefault(){},target:{id:'draft-form',values:{'project-title':'검토한 캠페인','project-goal':'목표','project-owner':'','project-start':'','project-due':'','title-0':'콘텐츠 발행','assignee-0':'jh','due-0':'','priority-0':'보통','kpi-0':'','target-0':'','unit-0':'','include-0':'on',acknowledged:'on'}}});
   const snapshot=await pg.repository.load(),project=snapshot.state.projects.find(x=>x.title==='검토한 캠페인');assert.ok(project);assert.equal(snapshot.state.tasks.find(x=>x.title==='콘텐츠 발행').projectId,project.id);assert.match(nodes.get('#app').innerHTML,/관련 업무/);assert.match(nodes.get('#app').innerHTML,/검토한 캠페인/);
  });
  await t.test('sectioned meeting review registers selected tasks into editable project groups',async()=>{
-  await click('data-nav','minutes');await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'group meeting',projectId:'__groups__',body:'1. ALPHA 현황\n서비스를 소개했다.\n2. BETA 현황\n제품을 소개했다.\n3. 후속 업무\n정승재 책임: ALPHA 자료 공유하기\n최재희 주임: BETA 질문 정리하기'}}});assert.match(nodes.get('#app').innerHTML,/추출 근거/);
+  await click('data-nav','minutes');await archiveAndReview({title:'group meeting',projectId:'__groups__',body:'1. ALPHA 현황\n서비스를 소개했다.\n2. BETA 현황\n제품을 소개했다.\n3. 후속 업무\n정승재 책임: ALPHA 자료 공유하기\n최재희 주임: BETA 질문 정리하기'});assert.match(nodes.get('#app').innerHTML,/추출 근거/);
   const values={acknowledged:'on','group-title-0':'ALPHA 작업','group-goal-0':'','group-title-1':'BETA 작업','group-goal-1':''};for(let i=0;i<2;i++)Object.assign(values,{[`title-${i}`]:'group task '+i,[`assignee-${i}`]:i?'jh':'sj',[`due-${i}`]:'',[`priority-${i}`]:'보통',[`kpi-${i}`]:'',[`target-${i}`]:'',[`unit-${i}`]:'',[`group-${i}`]:'group-'+i,[`include-${i}`]:'on'});
   await listeners.submit({preventDefault(){},target:{id:'draft-form',values}});const snapshot=await pg.repository.load();const p=snapshot.state.projects.find(p=>p.title==='ALPHA 작업');assert.ok(p);assert.equal(snapshot.state.tasks.find(t=>t.title==='group task 0').projectId,p.id);assert.equal(snapshot.state.minutes.find(m=>m.title==='group meeting').projectIds.length,2);assert.match(nodes.get('#app').innerHTML,/BETA 작업/);
  });
  await t.test('manual missing candidate can be added without rewriting minutes and preserves reviewed inputs',async()=>{
-  await click('data-nav','minutes');await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'manual review',projectId:'__groups__',body:'회의 목적: 검증용 배경 설명'}}});await click('data-action','draft-add');
+  await click('data-nav','minutes');await archiveAndReview({title:'manual review',projectId:'__groups__',body:'회의 목적: 검증용 배경 설명'});await click('data-action','draft-add');
   const values={'review-meeting-title':'manual review','group-title-0':'직접 검토한 프로젝트','group-goal-0':'','title-0':'누락된 업무 보완','assignee-0':'jh','due-0':'','priority-0':'보통','kpi-0':'','target-0':'','unit-0':'','group-0':'group-0','include-0':'on',acknowledged:'on'};nodes.set('#draft-form',{values});listeners.input({target:{closest:selector=>selector==='#draft-form',id:''}});
   await click('data-action','draft-add');assert.match(nodes.get('#app').innerHTML,/value="누락된 업무 보완"/);assert.match(nodes.get('#app').innerHTML,/value="직접 검토한 프로젝트"/);const ids=[...nodes.get('#app').innerHTML.matchAll(/data-action="draft-remove" data-id="([^"]+)"/g)].map(m=>m[1]);await click('data-action','draft-remove',ids[1]);
-  await listeners.submit({preventDefault(){},target:{id:'draft-form',values}});const snapshot=await pg.repository.load();assert.ok(snapshot.state.tasks.some(t=>t.title==='누락된 업무 보완'));assert.equal(snapshot.state.minutes.find(m=>m.title==='manual review').body,'회의 목적: 검증용 배경 설명');
+  await listeners.submit({preventDefault(){},target:{id:'draft-form',values}});const snapshot=await pg.repository.load();assert.ok(snapshot.state.tasks.some(t=>t.title==='누락된 업무 보완'));assert.equal(snapshot.state.minutes.find(m=>m.title==='manual review').body,'회의 목적: 검증용 배경 설명');assert.equal(snapshot.state.minutes.filter(m=>m.title==='manual review').length,1);
  });
  await t.test('settings labels reflect Supabase and no demo data controls',async()=>{await click('data-nav','settings');const html=nodes.get('#app').innerHTML;assert.match(html,/Supabase PostgreSQL 공유/);for(const label of ['전체 시연 데이터 백업','시연 데이터 준비','JSON 내보내기','예시 데이터 불러오기'])assert.ok(!html.includes(label));});
  await t.test('settings password form validates confirmation and clears credentials after successful change',async()=>{
