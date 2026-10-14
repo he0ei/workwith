@@ -67,4 +67,8 @@ Realtime은 사용하지 않습니다. revision만 30초/60초 확인하고 변�
 
 지정된 Free 프로젝트에 SQL 스키마와 RLS를 적용하고 workspace 함수를 배포했습니다. 대시보드 배포용 dashboard.ts는 build-functions.mjs에서 정본 모델·서버 handler를 합쳐 생성하며 Pages origin을 https://he0ei.github.io로 한정합니다. 별도의 APP_ORIGIN Secret 등록 없이 같은 검증을 수행합니다. CLI의 여러 파일 배포 방식은 위 환경변수 설정을 사용합니다.
 
+## 비밀번호 복구
+
+Authentication → URL Configuration의 Site URL은 https://he0ei.github.io/workwith/ 입니다. 로그인 화면에서 등록 이메일로 복구 링크를 요청합니다. 앱은 URL fragment를 제거한 뒤 Auth에서 토큰을 검증하고 비밀번호 변경 폼을 표시합니다. 새 비밀번호 입력·제출은 본인이 수행합니다. 기본 SMTP는 조직 팀원 주소만 발송 가능하고 시간당 2회 제한입니다. 다른 주소에는 별도 SMTP 구성이 필요하며 유료 서비스는 승인 없이 연결하지 않습니다. 실제 비밀번호와 복구 링크는 로그·Git·채팅에 보관하지 않습니다.
+
 실제 공개 URL/키를 GitHub Variables에 등록했고 미로그인 API 401을 확인했습니다. Cloudflare의 운영/미리보기 Git 빌드를 중지했습니다. 기존 운영 자원을 삭제하지 않았으며 Pages 성공 배포와 사용자 계정 검증은 아직 필요합니다.
