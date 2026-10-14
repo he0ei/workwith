@@ -1,7 +1,6 @@
 export const USERS = [{id:'ceo',name:'대표님',initial:'대'},{id:'sj',name:'승재 책임님',initial:'재'},{id:'sy',name:'승연 주임님',initial:'연'},{id:'jh',name:'재희 주임',initial:'희'}];
 export const STATUSES=['예정','진행 중','검토 요청','완료'];
 export const PRIORITIES=['높음','보통','낮음'];
-export const KEY='moa-demo-v1';
 export const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());
 export const uid=()=>crypto.randomUUID();
 export const empty=()=>({version:1,revision:0,projects:[],tasks:[],kpis:[],artifacts:[],minutes:[],history:[]});
@@ -87,9 +86,4 @@ export function registerDrafts(state,{title,body,projectId,drafts,acknowledged},
  for(const d of drafts){let kpiId='';if(d.kpiTitle){required(projectId&&d.kpiTarget!==null,'KPI는 프로젝트와 유효한 목표값이 필요합니다.');kpiId=uid();s=change(s,{type:'kpi.save',value:{id:kpiId,projectId,title:d.kpiTitle,target:d.kpiTarget,current:0,unit:d.unit,method:'manual'}},actor);}
   s=change(s,{type:'task.save',value:{id:uid(),title:d.title,note:'회의록 검토 후 등록',owner:actor,assignee:d.assignee,projectId,visibility:'shared',status:'예정',priority:d.priority,start:'',due:d.due,hours:0,completedAt:'',dependencies:[],kpiId,url:''}},actor);
  }return s;
-}
-export class DemoStore{
- constructor(storage){this.storage=storage;}
- read(){const raw=this.storage.getItem(KEY);return raw===null?empty():validate(JSON.parse(raw));}
- write(state,expectedRevision){const current=this.read();required(current.revision===expectedRevision,'다른 탭에서 데이터가 변경되었습니다. 새로고침 후 다시 시도하세요.');validate(state);this.storage.setItem(KEY,JSON.stringify(state));}
 }

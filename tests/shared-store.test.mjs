@@ -1,0 +1,4 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {SharedStore} from '../src/shared-store.js';
+test('default browser fetch runs with its native binding; no business-data persistence or success on failure',async()=>{const native=globalThis.fetch,calls=[],values=new Map(),storage={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};try{globalThis.fetch=function(url,options){assert.equal(this,undefined);calls.push({url,options});return Promise.resolve(Response.json({revision:3}));};const store=new SharedStore(undefined,storage);assert.deepEqual(await store.version(),{revision:3});assert.equal(calls[0].options.cache,'no-store');assert.equal(values.size,0);globalThis.fetch=()=>Promise.resolve(Response.json({error:'conflict'},{status:409}));await assert.rejects(store.change({type:'task.save'},1,1),err=>err.status===409);}finally{globalThis.fetch=native;}});
