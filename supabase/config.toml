@@ -1,0 +1,5 @@
+project_id = "workwith"
+[functions.workspace]
+# The handler verifies every JWT with Supabase Auth and then checks team membership.
+# Required for modern publishable keys; never rely on decoding an unverified JWT.
+verify_jwt = false

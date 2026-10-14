@@ -1,23 +1,28 @@
-# D1 전환 검증 · 2026-10-14
+# Supabase / GitHub Pages 전환 검증
 
-## 실행 결과
+2026-10-14 기준 로컬 준비 결과:
 
-- Node.js 24.19.0, 외부 패키지 추가 없음.
-- `node --test tests/*.test.mjs`: 40 pass, 0 fail (모델 19, UI 부모/하위 8, Worker API 12, 저장 계층 1).
-- `node scripts/build.mjs`: 정적 dist 빌드 성공. Worker 코드는 별도 main으로 배포.
-- 브라우저 API 호출의 fetch binding 오류를 발견·수정하고 회귀 테스트 추가.
-- 로컬 브라우저에서 기존 테스트 계정 로그인 → 공유 업무 생성 → 페이지 새로고침 → 협업 보드에서 같은 업무 유지 확인.
-- 로컬 테스트용 계정과 업무는 `.wrangler/local/` 개발 DB에만 있었으며 검증 후 제거. 운영 DB와 GitHub에 업로드하지 않음.
-- 실제 Cloudflare Workers Free 계정에서 `workwith-db` 생성. Console SQL 성공 및 workspace/records/users/sessions/login_attempts 테이블 목록 확인.
+- Node.js 24, PGlite 0.5.9(PostgreSQL) 테스트 전용 의존성 설치.
+- `node --test tests/*.test.mjs`: 44 pass, 0 fail.
+- 구성: 모델 19, UI 부모/하위 8, PostgreSQL 부모/하위 10, Edge Auth 경계 2, Supabase 저장 계층 5.
+- PostgreSQL에서 migration 실행·실제 역할별 RLS 적용·anon 권한 차단·비회원 차단·authenticated 직접 쓰기 차단·service 전용 commit·CAS·병렬 변경·SQL 제약 실패의 전체 롤백 확인.
+- UI에서는 기존 CRUD/KPI/결과물/회의록·숨겨진 탭 폴링 중단·열린 폼 보존·stale version 충돌 시 입력 유지 확인. UI 테스트에 저장 계층을 주입하며 실제 PostgreSQL repository를 호출함.
+- Auth 저장 계층: 이메일 로그인 REST 경로·세션 토큰만 보관·만료 갱신 single flight·네트워크 실패·409 전달·브라우저 fetch receiver 검증.
+- Edge handler: Supabase Auth 사용자 검증 후 DB 접근, 클라이언트 actor 무시, 미등록 사용자·잘못된 JWT·허용되지 않은 origin 차단.
+- 정적 빌드와 생성된 Edge shared 모듈 구문 확인. 프런트엔드 산출물에는 서버 코드·PGlite·비밀정보를 포함하지 않음.
 
-## 검증 범위
+실제 Supabase 프로젝트/계정 연결, SQL 적용, Edge 배포, GitHub Pages 실제 배포, 실제 여러 컴퓨터의 동기화는 아직 미수행이다. 기존 Cloudflare 운영 Worker/D1 DB는 변경·삭제하지 않았다. 사용자 승인으로 저장소 공개와 Pages Actions 설정을 완료했다. Supabase URL 변수도 준비했으며 공개 키·실제 프로젝트 접근 연결은 대기 중이다.
 
-인증 없는 요청, 잘못된 로그인, 세션 만료·로그아웃, 로그인 시도 제한, 최초 네 계정 일괄 설정·재설정 차단, 서버의 개인 업무·이력 필터, 타인 private ID 직접 수정 거부, 서로 다른 카드의 실제 병렬 요청, 같은 카드 stale version 충돌, 연쇄 삭제 stale revision, 회의록 원자적 등록, SQL 실패 전체 롤백, SQL 연결 재시작 후 데이터 유지, CORS 제한, DB 미연결 시 차단을 테스트했다.
+빌드 추가 검증: 공개 키로 프로젝트 한정 CSP·정적 산출물 확인. sb_secret 형태의 키는 의도대로 빌드에서 거부됨. 실제 프로젝트 공개 키는 아직 미등록이며 마지막 로컬 산출물은 미연결 상태로 다시 생성함.
 
-UI는 실제 API와 SQLite 어댑터를 사용하여 CRUD·전체 화면·KPI·결과물·회의록 등록·폴링 중 편집 폼 유지·충돌 시 입력 유지·숨겨진 탭의 폴링 중단을 검증했다. localStorage 접근 시 테스트가 실패하도록 설정했다.
+## 실제 서비스 준비 확인
 
-## 현재 한계
+- 사용자 브라우저 로그인 후 Supabase 조직의 FREE 요금제와 Healthy 프로젝트 확인.
+- 실제 SQL Editor에서 migration 적용 성공. workwith_members/workwith_records/workwith_workspace의 RLS=true 확인.
+- workspace Edge Function 배포 성공. 함수 내부에서 Auth 서버 검증을 수행하며 legacy-only JWT 검증은 비활성화하여 최신 JWT와 호환.
+- 실제 공개 키 요청: DB snapshot RPC는 401 permission denied, 미로그인 Edge 변경은 401 로그인 필요 응답.
+- GitHub Actions에 실제 SUPABASE_URL과 공개 publishable key 변수 등록. 비밀키는 등록하지 않음.
+- Cloudflare 운영·미리보기 자동 Git 빌드 중지 설정. 기존 Worker/D1 원격 데이터는 삭제하지 않음.
+- 아직 실제 팀원 Auth 계정/UUID 매핑·PR 병합·Pages 배포·실제 두 컴퓨터의 수정은 완료하지 않음.
 
-Worker API의 SQL 테스트는 D1에서 쓰는 API를 Node SQLite로 재현한 로컬 통합 검증이다. 실제 Cloudflare에는 DB와 스키마만 준비되어 있으며, 운영 Worker API 배포·계정 비밀번호 설정·실제 다중 컴퓨터의 동기화와 권한 검증은 아직 수행하지 않았다. 배포 이후 crypto CPU/무료 제한·D1 batch를 확인해야 한다.
-
-현재 프런트엔드는 기존 Workers 주소로 배포하는 구성이다. GitHub Pages 별도 배포는 미수행. 기존 브라우저 시연 데이터의 자동 이전·백업·샘플 불러오기 없음. 유료 서비스·AI·R2 저장 호출 없음.
+Supabase 공개 신규 가입을 비활성화했고 이메일 인증 설정은 유지했다. 사용자 계정은 관리자 등록 방식만 사용한다.

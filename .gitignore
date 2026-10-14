@@ -12,3 +12,6 @@ backups/
 .env*
 .wrangler/
 *.sqlite*
+
+supabase/functions/_shared/
+supabase/.temp/

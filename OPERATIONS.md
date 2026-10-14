@@ -1,47 +1,70 @@
-# D1 공유 워크스페이스 운영
+# GitHub Pages + Supabase 전환
 
-## 현재 준비 상태
+## 시작 전 조건
 
-2026-10-14: Workers Free 계정에서 `workwith-db`를 생성하고 운영 스키마를 D1 Console에 적용했습니다. 사용자·업무 데이터는 아직 없습니다. 코드 변경은 PR로 검토 후 main에 병합합니다. 운영 Worker 배포, 최초 계정 설정, 실제 네 컴퓨터 동기화 검증은 별도 완료 확인이 필요합니다.
+사용자 승인에 따라 `he0ei/workwith`는 공개 저장소로 변경했습니다. GitHub Pages는 Free의 공개 저장소 또는 Pro/Team 등의 비공개 저장소에서 사용할 수 있습니다. 저장소 공개는 사용자의 명시 승인 후에만 수행합니다. 회사 업무 데이터·계정 비밀번호·비밀키는 Git 저장소와 Pages 산출물에 넣지 않습니다. Pages 화면은 공개될 수 있으며 데이터 접근은 Supabase 로그인/RLS가 보호합니다.
 
-R2는 이 앱의 업무 DB·배포에 사용하지 않습니다. R2 구독 취소와 카드 삭제 상태는 앱 코드와 별개입니다. Workers Paid로 업그레이드하지 않습니다.
+- https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages
+- https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits
 
-## 최초 계정 설정
+회사 내부 서비스의 GitHub 이용 정책 적합성은 별도로 확인해야 합니다. Pages는 상업 SaaS·상업 거래를 주목적으로 운영하는 무료 호스팅 용도가 제한됩니다.
 
-1. PR을 main에 병합하고 Cloudflare Git 연결 배포가 성공했는지 확인합니다. Worker 설정의 `DB` 바인딩은 `workwith-db`여야 합니다. DB 미연결·스키마 누락 시 API는 503을 반환하며 로컬로 대체하지 않습니다.
-2. 관리자가 Cloudflare Worker → Settings → Variables and Secrets에서 **Secret** 유형으로 `SETUP_TOKEN`을 등록합니다. 비밀번호 관리자로 생성한 32자 이상의 무작위 코드를 사용하세요. 코드·비밀번호를 채팅이나 GitHub에 보내지 않습니다.
-3. 배포된 웹 주소를 열면 최초 계정 설정 화면이 나옵니다. 관리자가 설정 코드와 대표님·승재 책임님·승연 주임님·재희 주임의 서로 다른 12자 이상 비밀번호를 직접 입력합니다. 비밀번호 관리자 사용을 권장합니다.
-4. 네 계정이 하나의 D1 transaction으로 등록되며 이후 `/api/setup`은 409로 차단됩니다. 성공 후 Worker에서 `SETUP_TOKEN` Secret을 삭제합니다. 비밀번호는 각 팀원에게 회사에서 정한 안전한 방법으로 전달하세요.
-5. 각각의 컴퓨터에서 본인 계정으로 로그인합니다. 사용자 선택만 바꿔서는 로그인할 수 없습니다.
+## Supabase Free 프로젝트
 
-계정 설정·비밀번호 입력은 사용자 본인이 수행합니다. 초기 설정 코드나 실제 비밀번호가 코드·프런트엔드 번들·PR·로그에 포함되지 않도록 했습니다. 비밀번호 변경/분실 복구 UI·MFA·셀프 가입·조직 초대는 미구현입니다.
+1. https://supabase.com/dashboard 에서 사용자 계정으로 로그인합니다. 새 프로젝트 생성 시 조직 플랜이 **Free**인지 확인합니다. Pro 전환·유료 부가 기능은 선택하지 않습니다.
+2. 프로젝트 URL과 publishable key를 확인합니다. publishable key는 공개 클라이언트 식별값이며 접근 통제는 Auth/RLS가 담당합니다. service_role/secret key/DB 비밀번호는 채팅·GitHub Variables·프런트엔드에 넣지 않습니다.
+3. SQL Editor에서 `supabase/migrations/202610140001_workspace.sql`을 적용합니다. 빈 Supabase 프로젝트에 적용하며 다른 테이블을 초기화하거나 기존 D1 데이터를 삭제하지 않습니다. Supabase 연결 플러그인/CLI를 사용할 때도 같은 migration을 적용합니다.
+4. Authentication에서 공개 사용자 가입을 비활성화합니다. 관리자 화면에서 팀원의 이메일 계정을 직접 생성하고, 아래와 같이 Auth UUID와 기존 고정 ID를 매핑합니다. 실제 비밀번호 설정은 사용자 본인이 수행합니다. 자동 초대 이메일 발송은 하지 않습니다.
 
-## 권한과 저장
+```sql
+insert into public.workwith_members(user_id,member_id) values
+('로그인 계정의 Auth UUID','sj');
+-- 필요 계정별 sj / sy / jh / ceo 중 하나를 사용합니다.
+```
 
-D1은 직접 공개 API로 노출하지 않습니다. Worker는 세션 사용자만 신뢰하고 private 업무·이력을 응답에서 제거하며 수정·삭제도 거부합니다. 공유 데이터는 네 팀원이 편집할 수 있습니다. 사용자 계정과 세션은 별도 SQL 테이블이며 업무 상태 조회 응답에 포함되지 않습니다.
+회원은 최대 네 고정 ID만 등록됩니다. 미등록 로그인 사용자는 DB 조회와 Edge 변경 모두 차단합니다. 고정 ID를 다른 직원에게 재배정하면 해당 ID의 개인 업무 소유권도 바뀌므로 임의 재사용하지 않습니다. 관리자 설정 코드 SETUP_TOKEN은 새 구조에서 사용하지 않습니다.
 
-비밀번호: PBKDF2-SHA256, 100,000회, 사용자별 무작위 salt. 세션: 256-bit 무작위 토큰, DB에는 SHA256 해시만 저장, 8시간 만료, HttpOnly/Secure 쿠키 및 정적 호스트 분리용 sessionStorage bearer. 사용자 비밀번호는 sessionStorage에 저장하지 않습니다. CSP, HTML escaping과 외부 링크 검증을 유지합니다. 요청 Origin은 동일 호스트 또는 설정된 하나의 ALLOWED_ORIGIN만 허용합니다. 로그인은 IP당 시간당 20회로 제한합니다.
+## Edge Function
 
-전역 workspace revision을 조건부 갱신한 뒤 무작위 commit token으로 모든 레코드 변경을 조건부 실행합니다. D1 batch는 트랜잭션으로 실행되어 SQL 오류 시 전체 롤백됩니다. 레코드별 version을 비교하므로 다른 카드의 수정은 재시도해 합치고 같은 카드 충돌은 사용자에게 알립니다. 폼을 연 시점의 version을 보존하며 폴링으로 폼을 닫거나 입력을 교체하지 않습니다.
+정본 모델을 생성한 뒤 workspace 함수를 배포합니다.
 
-## 무료 정책
+```sh
+node scripts/build-functions.mjs
+supabase functions deploy workspace --project-ref 프로젝트_REF
+supabase secrets set APP_ORIGIN=https://he0ei.github.io --project-ref 프로젝트_REF
+```
 
-Workers Free와 D1 Free를 유지합니다. D1 읽기 하루 500만 행, 쓰기 하루 10만 행, 계정 저장 5GB, DB별 최대 500MB. Worker 동적 요청 하루 10만 건, CPU 요청당 10ms. 읽기 수는 반환 행이 아니라 스캔한 행 기준입니다. 무료 한도 초과 시 오류/제한이 적용되고 자동 유료 전환하지 않습니다. 가격 정책은 운영 전에 다시 확인합니다.
+CLI 인증정보를 명령 인자·Git 저장소·로그에 출력하지 않습니다. Supabase 연결 플러그인으로 배포하는 경우 생성된 _shared 파일들과 index.ts를 동일하게 포함합니다. SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY는 Supabase 함수 환경에서 제공하며 클라이언트에 전달하지 않습니다.
 
-- https://developers.cloudflare.com/d1/platform/pricing/
-- https://developers.cloudflare.com/d1/platform/limits/
-- https://developers.cloudflare.com/workers/platform/pricing/
+`verify_jwt=false`는 최신 publishable key와 호환하기 위한 gateway 설정입니다. handler가 모든 요청의 access token을 `/auth/v1/user`로 실제 검증하고, 관리자 DB에서 membership을 확인한 뒤에만 service_role로 변경을 계산합니다. JWT 내용을 단순 디코딩하여 사용자로 신뢰하지 않습니다. DB 변경 RPC는 service_role만 호출 가능합니다. 읽기 RPC는 authenticated + membership + RLS를 적용합니다.
 
-현재 작은 4인 팀을 위한 MVP는 state 조회와 변경 시 레코드 전체를 읽어 모델 규칙을 검증합니다. 폴링은 revision 한 행만 조회합니다. 이력·업무 수가 많아지면 전체 읽기와 의존성 검증 비용이 늘므로 D1 Metrics의 rows_read와 Worker CPU 오류를 확인하고 이력 페이지 조회·테이블별 질의로 최적화해야 합니다. 무료 한도 내 동작을 무조건 보장하지 않습니다.
+## GitHub Pages 배포 전환
 
-## 운영 검증
+1. 저장소 공개 승인 및 Pages Actions 활성화는 완료했습니다.
+2. 저장소 Settings → Secrets and variables → Actions → **Variables**에 `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`만 설정합니다.
+3. Settings → Pages → Source를 **GitHub Actions**로 지정합니다. 예상 경로는 https://he0ei.github.io/workwith/ 이지만 실제 배포 성공 전 사용 가능한 주소로 안내하지 않습니다.
+4. 기존 Cloudflare Git 자동 배포를 중지한 뒤 검토 완료 PR을 main에 병합합니다. 이 PR은 wrangler 설정을 제거하므로 기존 Wrangler 빌드와 함께 운영하지 않습니다. 현재 Worker 배포와 D1 DB 자체는 삭제하지 않았습니다.
+5. Pages Actions가 성공한 뒤 실제 링크에서 로그인·개인 업무 RLS·두 기기 수정 동기화·충돌을 검증합니다. 검증 전에는 기존 Cloudflare 서비스의 원격 자원을 삭제하지 않습니다.
 
-- 로그인 없는 API 요청은 401.
-- A의 개인 업무·메모·이력은 B에게 응답에 포함되지 않고 직접 ID로 수정·삭제 시 403.
-- 다른 카드 동시 수정은 모두 보존. 같은 카드의 오래된 입력은 409로 차단되고 폼 유지.
-- 저장·로그아웃·새 로그인·브라우저 새로고침 후 DB 유지.
-- 두 컴퓨터에서 일반 계정 30초, 대표님 60초 이내 변경 반영, 탭 복귀 시 즉시 확인.
-- 연결 끊김 시 저장 성공으로 표시하지 않음. 연결 복구 후 최신 데이터 확인.
-- 운영에서 최초 설정·로그인 crypto의 CPU 및 D1 batch 동작 확인. 로컬 SQLite 검사와 Cloudflare 실행 결과를 구분.
+연결 대상 Supabase 프로젝트: https://zpwqtvtbdmznbcfbhuvy.supabase.co
 
-GitHub Pages로 프런트엔드만 옮길 때 API_BASE, ALLOWED_ORIGIN, CSP를 함께 설정하고 두 실제 origin에서 로그인·CORS를 검증해야 합니다. 비공개 GitHub 저장소의 Pages 요금제 조건과 사내 서비스 이용 정책도 별도로 확인해야 합니다.
+현재 D1 API는 configured=false여서 앱의 최초 계정 설정이 완료되지 않은 상태로 확인했습니다. D1 데이터가 실제 존재할 경우 먼저 사용자와 이전 범위를 확인하고 단일 전환 시점에 ID·이력·소유권을 보존하여 이전해야 합니다. 자동 샘플 업로드·백업 화면·데이터 초기화는 제공하지 않습니다.
+
+## 무료 한도와 운영
+
+Supabase Free는 DB 500MB, egress 5GB, cached egress 5GB, 파일 1GB, MAU 50,000, 활성 프로젝트 두 개를 제공합니다. 1주간 비활성 프로젝트는 일시 중지될 수 있습니다. D1 DB 하나의 무료 저장 한도도 500MB이므로 Supabase 전환 자체가 저장 용량을 늘려주지는 않습니다.
+
+- https://supabase.com/pricing
+- https://supabase.com/docs/guides/database/postgres/row-level-security
+
+Realtime은 사용하지 않습니다. revision만 30초/60초 확인하고 변경 시에만 데이터를 받지만 전체 state 조회가 큰 경우 egress 비용/한도에 영향을 줍니다. 쌓이는 업무·이력은 측정 후 페이지 조회로 최적화합니다. 무료 플랜은 무제한 운영 보장이 아닙니다. 유료 API·유료 플랜·AI 기능·파일 저장은 기본 미사용입니다.
+
+## 검증 필요 항목
+
+호스팅 정책/계정 연결 후 실제 Supabase에서 Auth 로그인, 외부 회원 차단, anonymous REST 차단, 타인의 private 레코드 직접 SELECT 및 수정 차단, Edge JWT/CORS, DB 트랜잭션, 세션 갱신, Pages 경로의 CSS/JS 로딩, 실제 두 컴퓨터의 수정 반영과 충돌을 확인해야 합니다. 로컬 PGlite PostgreSQL 검증은 실제 Supabase 배포 확인을 대체하지 않습니다.
+
+## 적용 결과
+
+지정된 Free 프로젝트에 SQL 스키마와 RLS를 적용하고 workspace 함수를 배포했습니다. 대시보드 배포용 dashboard.ts는 build-functions.mjs에서 정본 모델·서버 handler를 합쳐 생성하며 Pages origin을 https://he0ei.github.io로 한정합니다. 별도의 APP_ORIGIN Secret 등록 없이 같은 검증을 수행합니다. CLI의 여러 파일 배포 방식은 위 환경변수 설정을 사용합니다.
+
+실제 공개 URL/키를 GitHub Variables에 등록했고 미로그인 API 401을 확인했습니다. Cloudflare의 운영/미리보기 Git 빌드를 중지했습니다. 기존 운영 자원을 삭제하지 않았으며 Pages 성공 배포와 사용자 계정 검증은 아직 필요합니다.

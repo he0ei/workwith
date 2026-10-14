@@ -1,2 +1,3 @@
-// 공개 API 주소만 설정합니다. 비밀정보를 넣지 마세요. 같은 Worker에서 서비스하면 빈 문자열입니다.
-export const API_BASE='';
+// 빌드 시 공개 Supabase URL / publishable key만 주입합니다. secret/service_role 금지.
+export const SUPABASE_URL='';
+export const SUPABASE_KEY='';
