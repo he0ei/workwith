@@ -46,4 +46,10 @@ SUPABASE_URL=https://your-project.supabase.co SUPABASE_PUBLISHABLE_KEY=sb_publis
 
 ## 전환 상태
 
-사용자 승인에 따라 GitHub 저장소를 공개로 변경하고 Pages의 GitHub Actions 배포 설정을 활성화했습니다. 유료 업그레이드는 하지 않았습니다. Supabase Free의 DB/RLS/Edge 함수 적용과 GitHub 공개 변수 연결을 완료했습니다. 팀원 계정 등록·PR 병합·실제 Pages 배포와 동기화 검증이 남았습니다. 기존 Cloudflare Worker/D1은 원격에서 삭제하지 않았습니다. 준비가 끝나기 전에 이 PR을 병합하지 않습니다.
+사용자 승인에 따라 GitHub 저장소를 공개로 변경하고 Pages의 GitHub Actions 배포 설정을 활성화했습니다. 유료 업그레이드는 하지 않았습니다. Supabase Free의 DB/RLS/Edge 함수 적용과 GitHub 공개 변수 연결을 완료했습니다. PR #7 병합과 Pages 배포를 완료했습니다. 팀원 계정 등록·멤버 연결과 실제 여러 컴퓨터의 동기화 검증은 남아 있으며, 현재는 사용자 요청에 따라 로그인 설정을 보류하고 디자인 작업을 진행합니다. 기존 Cloudflare Worker/D1은 원격에서 삭제하지 않았습니다.
+
+## Atlassian 디자인과 로그인 없는 미리보기
+
+화면은 [Atlassian Design System](https://atlassian.design/foundations/color)의 의미별 색상, 8px 간격, 선택/포커스 표시, 간결한 입력과 배지 원칙을 기존 vanilla HTML/CSS에 적용합니다. React Atlaskit 런타임 도입이 아닙니다. Material 테마 참조와 모아 명칭은 제거했습니다. 대시보드는 담당자별 업무량 없이 프로젝트 현황·이번 주 업무·KPI를 중심으로 배치합니다.
+
+로그인 없이 `?preview=1`로 전체 화면을 확인할 수 있고 로그인 화면에도 미리보기 버튼이 있습니다. 파일을 직접 여는 경우에도 빈 상태의 디자인 미리보기로 시작합니다. 미리보기는 실제 DB·세션·회사 데이터를 읽지 않으며 저장과 폴링을 수행하지 않습니다. 데이터 백업·샘플 준비 기능은 추가하지 않았습니다. 실제 데이터 접근은 기존 Supabase Auth/RLS를 유지합니다.
