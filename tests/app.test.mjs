@@ -28,6 +28,24 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-action','project');await submit('project',{title:'test project',owner:'sj',start:'',due:'',goal:'goal'},'p');assert.equal((await item('projects','p')).title,'test project');
   await click('data-action','task-private');await submit('task',{title:'private UI',visibility:'private',assignee:'sy',projectId:'p',status:'예정',priority:'높음',start:'',due:'',hours:'1',kpiId:'',url:'',note:'private'},'t');assert.equal((await item('tasks','t')).assignee,'sj');assert.equal((await item('tasks','t')).projectId,'');
  });
+ await t.test('dragging between board stages saves through SQL and records completion date',async()=>{
+  await click('data-nav','mine');assert.match(nodes.get('#app').innerHTML,/data-drag-task="t"/);
+  const classes={add(){},remove(){}},card={dataset:{dragTask:'t'},classList:classes};
+  const target={closest:selector=>selector==='[data-drag-task]'?card:null};
+  const transfer={setData(){}};
+  listeners.dragstart({target,dataTransfer:transfer,preventDefault(){assert.fail('drag should be accepted');}});
+  const column={dataset:{dropStatus:'완료'},classList:classes};
+  await listeners.drop({target:{closest:()=>column},preventDefault(){}});
+  const saved=await item('tasks','t');assert.equal(saved.status,'완료');assert.ok(saved.completedAt);
+  listeners.dragstart({target,dataTransfer:transfer,preventDefault(){}});
+  column.dataset.dropStatus='진행 중';await listeners.drop({target:{closest:()=>column},preventDefault(){}});
+  assert.equal((await item('tasks','t')).completedAt,'');
+  listeners.dragstart({target,dataTransfer:transfer,preventDefault(){}});
+  const concurrent=await pg.repository.load();
+  await mutate(pg.repository,{action:{type:'task.save',value:{...concurrent.state.tasks.find(t=>t.id==='t'),title:'동시 수정 보존'}},revision:concurrent.state.revision,baseVersion:concurrent.versions['tasks:t']},'sj');
+  column.dataset.dropStatus='완료';await listeners.drop({target:{closest:()=>column},preventDefault(){}});
+  assert.equal((await item('tasks','t')).status,'진행 중');assert.equal((await item('tasks','t')).title,'동시 수정 보존');assert.match(nodes.get('#toast').textContent,/다른 사람이 먼저 수정/);
+ });
  await t.test('all views render; KPI and artifacts are saved via authenticated API',async()=>{
   for(const name of ['collab','mine','calendar','projects','minutes','archive','settings','dashboard']){await click('data-nav',name);assert.match(nodes.get('#app').innerHTML,/<main>/);}
   await click('data-action','kpi','p');await submit('kpi',{title:'KPI',projectId:'p',target:'10',current:'4',unit:'건',method:'increase'},'k');
