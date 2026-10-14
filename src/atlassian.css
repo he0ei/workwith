@@ -95,3 +95,9 @@ dialog{width:680px;border:1px solid #dfe1e6;border-radius:8px;padding:24px;color
 .draft-source{grid-column:1/-1;font-size:11px;color:var(--ds-text-subtle);background:var(--ds-surface-sunken);padding:8px 12px;border-radius:4px}.draft-source summary{cursor:pointer}.draft-source p{margin:12px 0 0;line-height:1.7}.project-draft small{grid-column:1/-1}#draft-form>label{display:block;margin-bottom:16px}
 
 .review-task{border:1px solid var(--ds-border);border-radius:4px;margin:12px 0;background:#fff}.review-task>summary{cursor:pointer;padding:16px;line-height:1.6}.review-task>summary strong{font-size:13px;font-weight:500}.review-task>summary span{display:block;font-size:11px;color:var(--ds-text-subtlest);margin-left:16px}.review-task .draft{margin:0 16px 16px}.review-task[open]>summary{background:var(--ds-surface-sunken);margin-bottom:16px}
+/* Board movement keeps form controls clickable and shows the destination. */
+.task-card[draggable="true"] { cursor: grab; }
+.task-card[draggable="true"]:active { cursor: grabbing; }
+.task-card.dragging { opacity: .45; }
+.board .column.drop-target { background: #e9f2ff; outline: 2px solid #0c66e4; outline-offset: -2px; }
+.board .column { transition: background-color .15s, outline-color .15s; }
