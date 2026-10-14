@@ -110,3 +110,5 @@ dialog{width:680px;border:1px solid #dfe1e6;border-radius:8px;padding:24px;color
 .collaborator-options small { width: 100%; line-height: 1.5; }
 .task-people { display: flex; flex-wrap: wrap; gap: 8px; }
 .person-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; color: #44546f; }
+
+.minutes-layout.archive-only { grid-template-columns: minmax(0, 1fr); }

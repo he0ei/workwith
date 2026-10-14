@@ -147,12 +147,14 @@ export function parseMeeting(body){
  }
  return {project,drafts,unclassified,meetingTitle:meetingTitle||(firstDate?firstDate+' 회의록':''),projects:groups,sections};
 }
-export function registerDrafts(state,{title,body,projectId,drafts,acknowledged,newProject,newProjects},actor){
+export function registerDrafts(state,{minutesId,title,body,projectId,drafts,acknowledged,newProject,newProjects},actor){
  required(drafts.length>0,'등록할 업무 초안이 없습니다.');required(acknowledged,'초안을 검토하고 확인란을 선택하세요.');
+ const archived=minutesId?state.minutes.find(m=>m.id===minutesId):null;required(!minutesId||archived,'보관된 회의록을 찾을 수 없습니다.');
  let s=state;const projectMap=new Map();
  if(newProjects){required(!projectId&&!newProject&&Array.isArray(newProjects)&&newProjects.length>0,'프로젝트 그룹을 확인하세요.');for(const p of newProjects){required(typeof p.key==='string'&&!projectMap.has(p.key),'프로젝트 그룹 ID 오류');const id=uid();projectMap.set(p.key,id);s=change(s,{type:'project.save',value:{id,title:p.title,goal:p.goal,owner:p.owner,start:p.start,due:p.due}},actor);}}
  if(newProject){required(!projectId,'새 프로젝트와 기존 프로젝트를 함께 지정할 수 없습니다.');projectId=uid();s=change(s,{type:'project.save',value:{id:projectId,title:newProject.title,goal:newProject.goal,owner:newProject.owner,start:newProject.start,due:newProject.due}},actor);}
- s=change(s,{type:'minutes.save',value:{id:uid(),title,body,projectId,...(newProjects?{projectIds:[...projectMap.values()]}:{}),author:actor,at:new Date().toISOString()}},actor);
+ const links=[...new Set([...(archived?.projectIds||[]),...(archived?.projectId?[archived.projectId]:[]),...(newProjects?[...projectMap.values()]:projectId?[projectId]:[])])];
+ s=change(s,{type:'minutes.save',value:{id:archived?.id||uid(),title:archived?.title||title,body:archived?.body||body,projectId:archived?.projectId||projectId,...(links.length?{projectIds:links}:{}),author:archived?.author||actor,at:archived?.at||new Date().toISOString()}},actor);
  for(const d of drafts){const taskProjectId=newProjects?projectMap.get(d.projectKey):projectId;required(!newProjects||taskProjectId,'업무의 프로젝트 연결을 확인하세요.');let kpiId='';if(d.kpiTitle){required(taskProjectId&&d.kpiTarget!==null,'KPI는 프로젝트와 유효한 목표값이 필요합니다.');kpiId=uid();s=change(s,{type:'kpi.save',value:{id:kpiId,projectId:taskProjectId,title:d.kpiTitle,target:d.kpiTarget,current:0,unit:d.unit,method:'manual'}},actor);}
   s=change(s,{type:'task.save',value:{id:uid(),title:d.title,note:d.source?`회의록 검토 후 등록\n출처: ${d.section||'회의록'}\n${d.source}`:'회의록 검토 후 등록',owner:actor,assignee:d.assignee,projectId:taskProjectId,visibility:'shared',status:'예정',priority:d.priority,start:'',due:d.due,hours:0,completedAt:'',dependencies:[],kpiId,url:''}},actor);
  }return s;
