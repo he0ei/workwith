@@ -46,6 +46,11 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-nav','minutes');await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'meeting',projectId:'p',body:'meeting task | | | 보통'}}});assert.match(nodes.get('#app').innerHTML,/담당자 확인 필요/);
   await listeners.submit({preventDefault(){},target:{id:'draft-form',values:{'title-0':'reviewed task','assignee-0':'jh','due-0':'','priority-0':'보통','kpi-0':'','target-0':'','unit-0':'','include-0':'on',acknowledged:'on'}}});assert.ok((await read()).some(x=>x.entity==='tasks'&&JSON.parse(x.payload).title==='reviewed task'));assert.ok((await read()).some(x=>x.entity==='minutes'));
  });
+ await t.test('meeting review creates a new project and opens its linked task detail',async()=>{
+  await click('data-nav','minutes');await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'new meeting',projectId:'__new__',body:'프로젝트: 새 캠페인\n업무:\n- 최재희: 콘텐츠 발행'}}});assert.match(nodes.get('#app').innerHTML,/value="새 캠페인"/);
+  await listeners.submit({preventDefault(){},target:{id:'draft-form',values:{'project-title':'검토한 캠페인','project-goal':'목표','project-owner':'','project-start':'','project-due':'','title-0':'콘텐츠 발행','assignee-0':'jh','due-0':'','priority-0':'보통','kpi-0':'','target-0':'','unit-0':'','include-0':'on',acknowledged:'on'}}});
+  const snapshot=await pg.repository.load(),project=snapshot.state.projects.find(x=>x.title==='검토한 캠페인');assert.ok(project);assert.equal(snapshot.state.tasks.find(x=>x.title==='콘텐츠 발행').projectId,project.id);assert.match(nodes.get('#app').innerHTML,/관련 업무/);assert.match(nodes.get('#app').innerHTML,/검토한 캠페인/);
+ });
  await t.test('settings labels reflect Supabase and no demo data controls',async()=>{await click('data-nav','settings');const html=nodes.get('#app').innerHTML;assert.match(html,/Supabase PostgreSQL 공유/);for(const label of ['전체 시연 데이터 백업','시연 데이터 준비','JSON 내보내기','예시 데이터 불러오기'])assert.ok(!html.includes(label));});
  await pg.close();
 });

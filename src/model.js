@@ -1,4 +1,4 @@
-export const USERS = [{id:'ceo',name:'대표님',initial:'대'},{id:'sj',name:'승재 책임님',initial:'재'},{id:'sy',name:'승연 주임님',initial:'연'},{id:'jh',name:'재희 주임',initial:'희'}];
+export const USERS = [{id:'ceo',name:'대표님',initial:'대'},{id:'sj',name:'정승재',initial:'재'},{id:'sy',name:'양승연',initial:'연'},{id:'jh',name:'최재희',initial:'희'}];
 export const STATUSES=['예정','진행 중','검토 요청','완료'];
 export const PRIORITIES=['높음','보통','낮음'];
 export const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());
@@ -73,16 +73,45 @@ export function change(state,action,actor){
 export function parseMinutes(body){
  return body.split('\n').filter(l=>l.trim()&&!l.trim().startsWith('#')).map(line=>{
   const [title='',name='',due='',priority='',kpiTitle='',target='',unit='']=line.split('|').map(x=>x.trim());
-  const assignee=USERS.find(u=>u.name===name)?.id||'';
+  const assignee=USERS.find(u=>u.name===name)?.id||({'승재 책임님':'sj','승연 주임님':'sy','재희 주임':'jh'}[name]||'');
   const issues=[];if(!assignee)issues.push('담당자 확인 필요');if(!due||!dateOK(due))issues.push('마감일 확인 필요');if(priority&&!PRIORITIES.includes(priority))issues.push('우선순위 확인 필요');
   const kpiTarget=target!==''&&Number.isFinite(Number(target))&&Number(target)>=0?Number(target):null;
   if(kpiTitle&&kpiTarget===null)issues.push('KPI 목표 확인 필요');
   return {id:uid(),title,assignee,due:dateOK(due)?due:'',priority:PRIORITIES.includes(priority)?priority:'보통',kpiTitle,kpiTarget,unit,issues};
  }).filter(d=>d.title);
 }
-export function registerDrafts(state,{title,body,projectId,drafts,acknowledged},actor){
+// Conservative text extraction: explicit action lines only; never infer relative dates.
+export function parseMeeting(body){
+ const project={title:'',goal:'',owner:'',start:'',due:''},drafts=[],unclassified=[];let meetingTitle='';
+ let actionSection=false;
+ for(const raw of body.split('\n')){
+  const line=raw.trim();if(!line)continue;
+  const clean=line.replace(/^#{1,6}\s*/, '').replace(/^[-*•]\s*/, '').trim();
+  const heading=clean.match(/^회의(?:명|\s*제목)\s*[:：]\s*(.+)$/);if(heading)meetingTitle=heading[1];
+  const meta=clean.match(/^(프로젝트(?:명)?|목표)\s*[:：]\s*(.+)$/);
+  if(meta){project[meta[1]==='목표'?'goal':'title']=meta[2];actionSection=false;continue;}
+  if(/^(업무|할\s*일|액션(?:\s*아이템)?|실행\s*항목)\s*[:：]?$/i.test(clean)){actionSection=true;continue;}
+  if(/^(참석자|회의(?:명|제목|일시)?|안건|논의(?:\s*내용)?|결정(?:\s*사항)?)\s*[:：]/.test(clean)||line.startsWith('#')){actionSection=false;unclassified.push(line);continue;}
+  if(line.includes('|')){drafts.push(...parseMinutes(line));continue;}
+  const marked=/^[-*•]\s+|^\d+[.)]\s+/.test(line)||/^업무\s*[:：]/.test(line);
+  const actionable=/(작성|제작|검토|발행|정리|조사|준비|수정|확인|공유|등록|진행|구현|개발|디자인|배포|제출|완료)(?:한다|하기|할|하기로|해야|\s*예정|\s*필요|\s*담당|\s*완료|\s*$)/.test(clean);
+  if(!actionSection&&!marked&&!actionable){unclassified.push(line);continue;}
+  const title=clean.replace(/^\d+[.)]\s+/, '').replace(/^업무\s*[:：]\s*/, '');
+  const people=USERS.filter(u=>title.includes(u.name));
+  const dates=[...title.matchAll(/\b(\d{4})[-./](\d{1,2})[-./](\d{1,2})\b/g)].map(m=>`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`);
+  const due=dates.length===1&&dateOK(dates[0])?dates[0]:'';
+  const priorities=PRIORITIES.filter(p=>new RegExp(`(?:우선순위\\s*[:：]\\s*|\\[)${p}`).test(title));
+  const issues=['텍스트 규칙으로 추출한 업무 · 내용 검토 필요'];
+  if(people.length!==1)issues.push('담당자 확인 필요');if(!due)issues.push('마감일 확인 필요');if(priorities.length!==1)issues.push('우선순위 확인 필요');if(title.length>200)issues.push('업무명 200자 제한 · 원문은 회의록에 보관');
+  if(title)drafts.push({id:uid(),title:title.slice(0,200),assignee:people.length===1?people[0].id:'',due,priority:priorities.length===1?priorities[0]:'보통',kpiTitle:'',kpiTarget:null,unit:'',issues});
+ }
+ return {project,drafts,unclassified,meetingTitle};
+}
+export function registerDrafts(state,{title,body,projectId,drafts,acknowledged,newProject},actor){
  required(drafts.length>0,'등록할 업무 초안이 없습니다.');required(acknowledged,'초안을 검토하고 확인란을 선택하세요.');
- let s=change(state,{type:'minutes.save',value:{id:uid(),title,body,projectId,author:actor,at:new Date().toISOString()}},actor);
+ let s=state;
+ if(newProject){required(!projectId,'새 프로젝트와 기존 프로젝트를 함께 지정할 수 없습니다.');projectId=uid();s=change(s,{type:'project.save',value:{id:projectId,title:newProject.title,goal:newProject.goal,owner:newProject.owner,start:newProject.start,due:newProject.due}},actor);}
+ s=change(s,{type:'minutes.save',value:{id:uid(),title,body,projectId,author:actor,at:new Date().toISOString()}},actor);
  for(const d of drafts){let kpiId='';if(d.kpiTitle){required(projectId&&d.kpiTarget!==null,'KPI는 프로젝트와 유효한 목표값이 필요합니다.');kpiId=uid();s=change(s,{type:'kpi.save',value:{id:kpiId,projectId,title:d.kpiTitle,target:d.kpiTarget,current:0,unit:d.unit,method:'manual'}},actor);}
   s=change(s,{type:'task.save',value:{id:uid(),title:d.title,note:'회의록 검토 후 등록',owner:actor,assignee:d.assignee,projectId,visibility:'shared',status:'예정',priority:d.priority,start:'',due:d.due,hours:0,completedAt:'',dependencies:[],kpiId,url:''}},actor);
  }return s;
