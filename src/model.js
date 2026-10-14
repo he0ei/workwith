@@ -11,6 +11,7 @@ const str=(s,max=10000)=>typeof s==='string'&&s.length<=max;
 export function safeURL(value){if(!value)return '';try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)&&!u.username&&!u.password?u.href:'';}catch{return '';}}
 export const visible=(task,user)=>task.visibility==='shared'||task.owner===user;
 export const visibleTasks=(state,user)=>state.tasks.filter(t=>visible(t,user));
+export const participates=(task,user)=>task.assignee===user||(task.visibility==='shared'&&(task.collaborators||[]).includes(user));
 export function validate(state){
  required(state&&state.version===1&&Number.isInteger(state.revision)&&state.revision>=0,'지원하지 않는 저장 데이터 형식입니다.');
  for(const key of ['projects','tasks','kpis','artifacts','minutes','history']){
@@ -21,6 +22,9 @@ export function validate(state){
  for(const p of state.projects)required(str(p.title,200)&&p.title.trim()&&str(p.goal)&&userOK(p.owner)&&dateOK(p.start)&&dateOK(p.due)&&(!p.start||!p.due||p.start<=p.due),'프로젝트 값 또는 일정 오류');
  for(const k of state.kpis)required(project(k.projectId)&&str(k.title,200)&&k.title.trim()&&str(k.unit,50)&&['increase','decrease','manual'].includes(k.method)&&Number.isFinite(k.target)&&k.target>=0&&Number.isFinite(k.current)&&k.current>=0,'KPI 값 오류');
  for(const t of state.tasks){
+  const collaborators=t.collaborators??[];
+  required(Array.isArray(collaborators)&&collaborators.length<=USERS.length&&new Set(collaborators).size===collaborators.length&&collaborators.every(id=>id&&userOK(id)&&id!==t.assignee),'협업자 값 오류');
+  required(t.visibility!=='private'||collaborators.length===0,'개인 업무에는 협업자를 지정할 수 없습니다.');
   required(str(t.title,200)&&t.title.trim()&&str(t.note)&&userOK(t.assignee)&&userOK(t.owner)&&t.owner&&['shared','private'].includes(t.visibility)&&STATUSES.includes(t.status)&&PRIORITIES.includes(t.priority),'업무 값 오류');
   required((!t.projectId||project(t.projectId))&&(t.visibility!=='private'||(!t.projectId&&t.assignee===t.owner)),'개인 업무는 소유자에게만 배정하며 프로젝트에 연결할 수 없습니다.');
   required(dateOK(t.start)&&dateOK(t.due)&&dateOK(t.completedAt)&&(!t.start||!t.due||t.start<=t.due)&&Number.isFinite(t.hours)&&t.hours>=0&&t.hours<=10000,'업무 일정 또는 예상 시간 오류');
@@ -49,7 +53,7 @@ export function change(state,action,actor){
   const old=s.tasks.find(t=>t.id===v.id);required(!old||visible(old,actor),'다른 사용자의 개인 업무를 수정할 수 없습니다.');
   required(v.visibility!=='private'||v.owner===actor,'다른 사용자의 개인 업무를 생성할 수 없습니다.');
   required(!old||old.owner===v.owner,'업무 소유자는 변경할 수 없습니다.');
-  const t={...v,completedAt:v.status==='완료'?(old?.completedAt||today()):''};
+  const t={...v,collaborators:v.collaborators??old?.collaborators??[],completedAt:v.status==='완료'?(old?.completedAt||today()):''};
   const datesChanged=old&&(old.start!==t.start||old.due!==t.due);
   required(!datesChanged||action.reason?.trim(),'일정 변경 사유를 입력하세요.');
   if(t.status==='완료')required(t.dependencies.every(id=>s.tasks.find(x=>x.id===id)?.status==='완료'),'선행 업무를 완료한 후 완료 처리하세요.');

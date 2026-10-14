@@ -101,3 +101,10 @@ dialog{width:680px;border:1px solid #dfe1e6;border-radius:8px;padding:24px;color
 .task-card.dragging { opacity: .45; }
 .board .column.drop-target { background: #e9f2ff; outline: 2px solid #0c66e4; outline-offset: -2px; }
 .board .column { transition: background-color .15s, outline-color .15s; }
+.task-project-label { font-size: 14px; line-height: 1.45; font-weight: 650; color: #0055cc; letter-spacing: 0; overflow-wrap: anywhere; }
+.task-card .card-top { align-items: flex-start; gap: 10px; }
+.task-card .card-top .priority { flex-shrink: 0; }
+.task-collaborators { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 12px 0; font-size: 12px; color: #44546f; }
+.collaborator-chip { padding: 3px 8px; border-radius: 4px; background: #e9f2ff; color: #0747a6; font-weight: 500; }
+.collaborator-options { display: flex; flex-wrap: wrap; gap: 12px; }
+.collaborator-options small { width: 100%; line-height: 1.5; }

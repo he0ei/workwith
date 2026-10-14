@@ -52,6 +52,13 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-action','artifact','p');await submit('artifact',{title:'result',projectId:'p',url:'https://example.com'},'a');
   await click('data-action','project-open','p');assert.match(nodes.get('#app').innerHTML,/value="40"/);assert.match(nodes.get('#app').innerHTML,/result/);
  });
+ await t.test('shared task collaborator persists and is included in my board, calendar and member filter',async()=>{
+  await click('data-action','task');await submit('task',{title:'협업 검증',visibility:'shared',assignee:'sy',collaborator:'sj',projectId:'p',status:'예정',priority:'보통',start:'',due:'',hours:'1',kpiId:'',url:'',note:''},'t-collab');assert.deepEqual((await item('tasks','t-collab')).collaborators,['sj']);
+  await click('data-nav','mine');assert.match(nodes.get('#app').innerHTML,/협업 검증/);assert.match(nodes.get('#app').innerHTML,/task-project-label/);assert.match(nodes.get('#app').innerHTML,/collaborator-chip/);
+  await click('data-nav','calendar');assert.match(nodes.get('#app').innerHTML,/협업 검증/);await click('data-nav','collab');await listeners.change({target:{id:'assignee-filter',value:'sj',dataset:{}}});assert.match(nodes.get('#app').innerHTML,/협업 검증/);
+  await click('data-action','task','t-collab');assert.match(nodes.get('#editor').innerHTML,/name="collaborator" value="sj" checked/);
+  await click('data-action','close');
+ });
  await t.test('poll refresh keeps open editor and stale save is rejected without overwriting input',async()=>{
   await click('data-action','task','t');const html=nodes.get('#editor').innerHTML;
   const current=await item('tasks','t');current.title='other update';const snapshot=await pg.repository.load();
