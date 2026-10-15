@@ -82,7 +82,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await submit('task',{...current,title:'unsaved input',hours:'1'},'t');assert.match(nodes.get('#form-error').textContent,/다른 사람이 먼저 수정/);assert.equal((await item('tasks','t')).title,'other update');assert.equal(nodes.get('#editor').open,true);
  });
  await t.test('hidden tabs cancel polling and visibility refresh does not close editor',async()=>{document.hidden=true;listeners.visibilitychange();assert.ok(![...timers.values()].some(x=>x.delay===30000));document.hidden=false;listeners.visibilitychange();assert.ok([...timers.values()].some(x=>x.delay===30000));assert.equal(nodes.get('#editor').open,true);await click('data-action','close');});
- await t.test('pasting minutes never parses automatically; archive-only saves preserve original without tasks',async()=>{
+ await t.test('archive-only submission preserves original without tasks',async()=>{
   await click('data-nav','minutes');const body='후속 업무\n양승연: 검증 자료 정리하기';nodes.set('#minutes-form',{values:{title:'원문 보관 검증',body,projectId:''}});listeners.input({target:{id:'',closest:selector=>selector==='#minutes-form'}});assert.ok(![...timers.values()].some(t=>t.delay===350));assert.ok(!nodes.get('#app').innerHTML.includes('id="draft-form"'));
   const before=await pg.repository.load();await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'원문 보관 검증',body,projectId:''}}});const after=await pg.repository.load();assert.equal(after.state.tasks.length,before.state.tasks.length);assert.equal(after.state.projects.length,before.state.projects.length);const m=after.state.minutes.find(m=>m.title==='원문 보관 검증');assert.equal(m.body,body);assert.equal(m.projectId,'');assert.ok(!nodes.get('#app').innerHTML.includes('id="draft-form"'));assert.match(nodes.get('#app').innerHTML,/회의록 아카이브/);for(const text of ['업무 초안 만들기','프로젝트 · 업무 검토','추천 프로젝트별 생성','프로젝트/업무 등록'])assert.ok(!nodes.get('#app').innerHTML.includes(text));
   await click('data-nav','dashboard');await click('data-nav','minutes');assert.match(nodes.get('#app').innerHTML,/원문 보관 검증/);
@@ -165,7 +165,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   const shared=await item('tasks','rank-t0');
   await click('data-action','task');await submit('task',{...shared,title:'같은 프로젝트 추가 업무'},'meeting-task2');
   await click('data-nav','minutes');const group={innerHTML:''};
-  await listeners.change({target:{name:'projectId',value:'rank-p0',closest:()=>({id:'minutes-form',querySelector:()=>group})}});
+  await listeners.change({target:{name:'projectId',value:'rank-p0',closest:()=>({id:'minutes-form',values:{projectId:'rank-p0',body:''},querySelector:s=>s==='[data-meeting-tasks]'?group:null})}});
   assert.match(group.innerHTML,/순위 업무 0/);assert.match(group.innerHTML,/같은 프로젝트 추가 업무/);assert.ok(!group.innerHTML.includes('순위 업무 1'));
   const body='회의 원문 <script>alert(1)</script>';
   await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'프로젝트 업무 회의',body,meetingDate:'2026-10-15',projectId:'rank-p0',task:['rank-t0','meeting-task2','rank-t1','t']}}});
@@ -181,6 +181,12 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   const other=await pg.rpc('authenticated','sy','workwith_snapshot');assert.deepEqual(other.state.minutes.find(x=>x.id===m.id).taskIds,['meeting-task2']);
   await click('data-action','minutes-edit',m.id);await submit('minutes',{...await item('minutes',m.id),projectId:'rank-p1',task:['rank-t0','rank-t1']},m.id);assert.deepEqual((await item('minutes',m.id)).taskIds,['rank-t1']);
   await click('data-action','task-minutes','meeting-task2');assert.ok(!nodes.get('#editor').innerHTML.includes('프로젝트 업무 회의'));await click('data-action','close');
+ });
+ await t.test('pasted meeting registers linked project tasks with one submit and skips existing task titles',async()=>{
+  await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'업무 자동화 회의',body:'프로젝트: 자동화\n후속 업무\n- 정승재: 초안 작성하기\n- 양승연: 시안 검토하기',meetingDate:'2026-10-15',projectId:'__new__',newProjectTitle:'자동화',generateTasks:'on'}}});
+  let snapshot=await pg.repository.load();const project=snapshot.state.projects.find(p=>p.title==='자동화'),m=snapshot.state.minutes.find(m=>m.title==='업무 자동화 회의');assert.ok(project);assert.equal(snapshot.state.tasks.filter(t=>t.projectId===project.id).length,2);assert.equal(m.projectId,project.id);assert.equal(m.taskIds.length,2);assert.equal(m.meetingDate,'2026-10-15');
+  await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'추가 논의',body:'후속 업무\n- 정승재: 초안 작성하기\n- 최재희: 문구 작성하기',meetingDate:'2026-10-15',projectId:project.id,generateTasks:'on'}}});
+  snapshot=await pg.repository.load();assert.equal(snapshot.state.tasks.filter(t=>t.projectId===project.id).length,3);assert.equal(snapshot.state.minutes.find(m=>m.title==='추가 논의').taskIds.length,1);
  });
  await pg.close();
 });
