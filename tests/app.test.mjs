@@ -161,5 +161,22 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-action','task','t');const fresh=await pg.repository.load();await mutate(pg.repository,{action:{type:'task.save',value:{...attached,title:'다른 수정'}},revision:fresh.state.revision,baseVersion:fresh.versions['tasks:t']},'sj');await submit('task',{...attached,file},'t');assert.deepEqual(removed,[conflictAttachment.path]);assert.deepEqual((await item('tasks','t')).attachment,attachment);assert.equal((await item('tasks','t')).title,'다른 수정');assert.equal(nodes.get('#editor').open,true);await click('data-action','close');
   await click('data-action','task','t');await submit('task',{...await item('tasks','t'),removeAttachment:'on'},'t');assert.equal((await item('tasks','t')).attachment,null);
  });
+ await t.test('tasks link multiple archived minutes, preserve links on status changes and hide private relationships',async()=>{
+  const bodies=['연결 원문 <script>alert(1)</script>','두 번째 회의 원문'];
+  for(let i=0;i<2;i++)await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'업무 연결 회의 '+i,body:bodies[i],meetingDate:'2026-10-15',projectId:''}}});
+  const snapshot=await pg.repository.load(),minutes=snapshot.state.minutes.filter(m=>m.title.startsWith('업무 연결 회의 ')),ids=minutes.map(m=>m.id),old=snapshot.state.tasks.find(t=>t.id==='t');
+  await click('data-action','task','t');await submit('task',{...old,minute:ids},'t');
+  assert.deepEqual((await item('tasks','t')).minuteIds,ids);
+  await click('data-action','task-minutes','t');const editor=nodes.get('#editor').innerHTML;
+  assert.match(editor,/id="task-section-minutes"/);assert.match(editor,/업무 연결 회의 0/);assert.ok(editor.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));assert.ok(editor.includes('value="'+ids[0]+'" checked'));
+  await click('data-action','close');await click('data-nav','mine');assert.match(nodes.get('#app').innerHTML,/회의록 2개/);
+  await listeners.change({target:{id:'',dataset:{status:'t'},value:'진행 중'}});assert.deepEqual((await item('tasks','t')).minuteIds,ids);
+  const shared=await item('tasks','rank-t0');await click('data-action','task','rank-t0');await submit('task',{...shared,minute:[ids[0]]},'rank-t0');
+  await click('data-nav','minutes');assert.match(nodes.get('#app').innerHTML,/연결 업무/);
+  const other=await pg.rpc('authenticated','sy','workwith_snapshot');assert.ok(!other.state.tasks.some(t=>t.id==='t'));assert.deepEqual(other.state.tasks.find(t=>t.id==='rank-t0').minuteIds,[ids[0]]);
+  const current=await item('tasks','t');await click('data-action','task','t');await submit('task',{...current},'t');assert.deepEqual((await item('tasks','t')).minuteIds,[]);
+  for(let i=0;i<2;i++)assert.equal((await item('minutes',ids[i])).body,bodies[i]);
+  await click('data-action','minutes-delete',ids[0]);await click('data-nav','collab');assert.ok(!nodes.get('#app').innerHTML.includes('회의록 1개'));
+ });
  await pg.close();
 });
