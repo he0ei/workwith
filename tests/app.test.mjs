@@ -12,7 +12,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
  const listeners={},windowListeners={},timers=new Map();let timerId=0;const pg=await postgres();
  const store={read:()=>pg.rpc('authenticated','sj','workwith_snapshot'),version:()=>pg.rpc('authenticated','sj','workwith_revision'),change:(action,revision,baseVersion)=>mutate(pg.repository,{action,revision,baseVersion},'sj')};
  globalThis.localStorage={getItem(){throw Error('local business storage prohibited');},setItem(){throw Error('local business storage prohibited');}};
- globalThis.document={hidden:false,querySelector:s=>nodes.get(s),addEventListener:(name,fn)=>listeners[name]=fn};
+ globalThis.document={hidden:false,querySelector:s=>nodes.get(s),addEventListener:(name,fn)=>{const previous=listeners[name];listeners[name]=previous?e=>Promise.all([previous(e),fn(e)]):fn;}};
  globalThis.window={addEventListener:(name,fn)=>windowListeners[name]=fn};globalThis.location={protocol:'http:'};
  globalThis.setTimeout=(fn,delay)=>{const id=++timerId;timers.set(id,{fn,delay});return id;};globalThis.clearTimeout=id=>timers.delete(id);
 
@@ -131,6 +131,24 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-nav','settings');assert.match(nodes.get('#app').innerHTML,/비밀번호 변경/);await click('data-action','password-change');assert.match(nodes.get('#editor').innerHTML,/autocomplete="current-password"/);assert.match(nodes.get('#editor').innerHTML,/autocomplete="new-password"/);
   await submit('password-change',{currentPassword:'temporary-test',password:'replacement-test',confirmPassword:'mismatch'},'');assert.equal(called,0);assert.equal(nodes.get('#editor').open,true);assert.match(nodes.get('#form-error').textContent,/일치하지/);
   await submit('password-change',{currentPassword:'temporary-test',password:'replacement-test',confirmPassword:'replacement-test'},'');assert.equal(called,1);assert.equal(nodes.get('#editor').open,false);assert.equal(nodes.get('#editor').innerHTML,'');assert.match(nodes.get('#toast').textContent,/비밀번호를 변경/);
+ });
+ await t.test('project completion persists without changing tasks; sidebar toggle preserves page',async()=>{
+  await click('data-action','project-open','p');const before=await pg.repository.load();await click('data-action','project-toggle','p');assert.equal((await item('projects','p')).status,'완료');assert.deepEqual((await pg.repository.load()).state.tasks,before.state.tasks);assert.match(nodes.get('#app').innerHTML,/다시 진행/);
+  await click('data-action','sidebar-toggle');assert.match(nodes.get('#app').innerHTML,/sidebar is-collapsed/);assert.match(nodes.get('#app').innerHTML,/사이드바 펼치기/);assert.match(nodes.get('#app').innerHTML,/test project/);
+  await click('data-nav','archive');assert.match(nodes.get('#app').innerHTML,/sidebar is-collapsed/);await click('data-action','sidebar-toggle');await click('data-action','project-toggle','p');assert.equal((await item('projects','p')).status,'진행 중');
+ });
+ await t.test('blue attachment icon opens picker; file drop stages upload until save; cancel does not upload',async()=>{
+  const file=new File(['%PDF-1.7'],'dropped.pdf',{type:'application/pdf'});let picked=0,uploads=0;nodes.set('#artifact-file',{click(){picked++;}});nodes.set('#attachment-selection',{textContent:''});const zone={classList:{add(){},remove(){}}};
+  store.uploadAttachment=async value=>{uploads++;assert.equal(value,file);return {bucket:'workwith-artifacts',path:'00000000-0000-4000-8000-000000000001/00000000-0000-4000-8000-000000000004.pdf',name:file.name,type:file.type,size:file.size};};
+  await click('data-action','artifact','p');assert.match(nodes.get('#editor').innerHTML,/data-file-drop/);await click('data-action','attachment-choose');assert.equal(picked,1);
+  await listeners.drop({target:{closest:s=>s==='[data-file-drop]'?zone:null},dataTransfer:{files:[file]},preventDefault(){}});assert.equal(uploads,0);assert.match(nodes.get('#attachment-selection').textContent,/dropped.pdf/);
+  await submit('artifact',{title:'드롭 결과',projectId:'p',url:''},'drop-result');assert.equal(uploads,1);assert.equal((await item('artifacts','drop-result')).attachment.name,'dropped.pdf');
+  await click('data-action','artifact','p');await listeners.drop({target:{closest:s=>s==='[data-file-drop]'?zone:null},dataTransfer:{files:[file]},preventDefault(){}});await click('data-action','close');assert.equal(uploads,1);
+ });
+ await t.test('dashboard limits each list to four, sorts by priority, and opens all ongoing tasks',async()=>{
+  for(let i=0;i<6;i++){await click('data-action','project');await submit('project',{title:'순위 프로젝트 '+i,goal:'',owner:'sj',start:'',due:'',priority:i===5?'높음':'낮음'},'rank-p'+i);await click('data-action','task');await submit('task',{title:'순위 업무 '+i,visibility:'shared',assignee:'sj',projectId:'rank-p'+i,status:'진행 중',priority:i===5?'높음':'낮음',start:'',due:'',hours:'0',url:'',note:'',kpiId:''},'rank-t'+i);}
+  await click('data-nav','dashboard');const html=nodes.get('#app').innerHTML;assert.equal((html.match(/class="project-card"/g)||[]).length,4);assert.equal((html.match(/class="task-line"/g)||[]).length,4);assert.ok(html.indexOf('순위 프로젝트 5')<html.indexOf('test project'));assert.ok(html.indexOf('순위 업무 5')<html.indexOf('순위 업무 0'));
+  await click('data-action','dashboard-all-tasks');assert.match(nodes.get('#app').innerHTML,/순위 업무 4/);assert.match(nodes.get('#app').innerHTML,/순위 업무 5/);
  });
  await pg.close();
 });

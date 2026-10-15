@@ -5,6 +5,18 @@ import {sample} from './fixtures.mjs';
 const task=(v={})=>({id:'t1',title:'업무',note:'메모',owner:'sj',assignee:'sj',visibility:'shared',projectId:'',status:'예정',priority:'보통',start:'2026-10-12',due:'2026-10-13',hours:2,completedAt:'',url:'',kpiId:'',dependencies:[],...v});
 const save=(s,t,actor='sj',reason='')=>change(s,{type:'task.save',value:t,reason},actor);
 const project={id:'p1',title:'프로젝트',goal:'목표',owner:'sj',start:'',due:''};
+test('프로젝트 완료와 재개는 연결 업무를 보존하고 날짜와 이력을 기록',()=>{
+ let s=change(empty(),{type:'project.save',value:project},'sj');s=save(s,task({projectId:'p1'}));const tasks=structuredClone(s.tasks);
+ s=change(s,{type:'project.save',value:{...s.projects[0],status:'완료',priority:'높음'}},'sj');assert.ok(s.projects[0].completedAt);assert.deepEqual(s.tasks,tasks);assert.match(s.history.at(-1).message,/프로젝트 완료/);
+ s=change(s,{type:'project.save',value:{...project,title:'이전 클라이언트 수정'}},'sj');assert.equal(s.projects[0].status,'완료');assert.equal(s.projects[0].priority,'높음');
+ s=change(s,{type:'project.save',value:{...s.projects[0],status:'진행 중'}},'sj');assert.equal(s.projects[0].completedAt,'');assert.match(s.history.at(-1).message,/프로젝트 재개/);assert.deepEqual(s.tasks,tasks);
+ assert.throws(()=>change(s,{type:'project.save',value:{...s.projects[0],status:'잘못된 상태'}},'sj'),/프로젝트 상태/);
+});
+test('프로젝트와 업무는 높은 우선순위, 같은 순위는 마감일순이며 완료 프로젝트는 뒤로',async()=>{
+ const {priorityOrder,sortedProjects}=await import('../src/model.js');const list=[{id:'low',title:'낮음',priority:'낮음'},{id:'normal',title:'보통'},{id:'high',title:'높음',priority:'높음',due:'2026-11-01'},{id:'early',title:'빠름',priority:'높음',due:'2026-10-20'}];
+ assert.deepEqual([...list].sort(priorityOrder).map(p=>p.id),['early','high','normal','low']);assert.equal(list[0].id,'low');
+ assert.deepEqual(sortedProjects([{...list[3],status:'완료'},...list.slice(0,3)]).map(p=>p.id),['high','normal','low','early']);
+});
 test('프로젝트와 업무 CRUD는 단일 레코드를 유지',()=>{let s=change(empty(),{type:'project.save',value:project},'sj');s=save(s,task({projectId:'p1'}));s=save(s,{...s.tasks[0],title:'수정'});assert.equal(s.tasks.length,1);assert.equal(s.tasks[0].title,'수정');s=change(s,{type:'task.delete',id:'t1'},'sj');assert.equal(s.tasks.length,0);s=change(s,{type:'project.delete',id:'p1'},'sj');assert.equal(s.projects.length,0);});
 test('공동 업무는 모든 팀원에게, 개인 업무는 소유자에게 조회',()=>{let s=save(empty(),task());s=save(s,task({id:'private',visibility:'private'}));assert.equal(visibleTasks(s,'sj').length,2);assert.equal(visibleTasks(s,'sy').length,1);assert.throws(()=>save(s,{...s.tasks[1],title:'침범'},'sy'),/수정할 수 없습니다/);});
 test('개인 업무의 타인 배정과 프로젝트 연결 차단',()=>{assert.throws(()=>save(empty(),task({visibility:'private',assignee:'sy'})),/개인 업무/);let s=change(empty(),{type:'project.save',value:project},'sj');assert.throws(()=>save(s,task({visibility:'private',projectId:'p1'})),/개인 업무/);});

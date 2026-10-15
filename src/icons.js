@@ -1,5 +1,8 @@
 // Local outlined SVG icons; no font download or third-party script.
 const paths = {
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  collapse:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m7-12-4 4 4 4"/>',
+  expand:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16m4-12 4 4-4 4"/>',
   dashboard: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   collab: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16M6 8v5M12 8v8M18 8v3"/>',
   mine: '<path d="m4 7 2 2 3-4m-5 9 2 2 3-4m3-5h8m-8 8h8"/>',
