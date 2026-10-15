@@ -294,17 +294,14 @@ footer { font-size:12px; }
 
 /* Task-level meeting archive links */
 .task-card .task-minute-count { align-self:flex-start; color:var(--t-accent); font-size:14px; min-height:32px; padding:4px 8px; background:#f2f6fc; border-radius:8px; }
-.task-minute-list { max-height:360px; overflow:auto; overscroll-behavior:contain; margin-top:16px; }
-.task-minute-option { padding:16px 0; border-bottom:1px solid #eef0f3; }
-.task-minute-option[hidden] { display:none; }
-.task-minute-option .check-label { align-items:flex-start; gap:12px; margin:0; }
-.task-minute-option .check-label input { flex:none; margin-top:4px; }
-.task-minute-option .check-label span { min-width:0; overflow-wrap:anywhere; }
-.task-minute-option strong { display:block; font-size:16px; font-weight:600; }
-.task-minute-option small { display:block; margin-top:4px; color:var(--t-secondary); font-size:14px; }
-.task-minute-option details { margin:8px 0 0 30px; }
-.task-minute-option summary { cursor:pointer; color:var(--t-accent); font-size:14px; }
-.task-minute-option .prewrap { padding:12px; border-radius:10px; background:#f9fafb; font-size:16px; overflow-wrap:anywhere; }
 .minute-tasks { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:16px 0; }
 .minute-tasks strong { font-size:14px; color:var(--t-secondary); }
 .task-editor .task-edit-tabs { flex-wrap:wrap; }
+
+.meeting-task-options { border:0; padding:0; margin:16px 0; min-width:0; }
+.meeting-task-options legend { font-size:15px; font-weight:600; margin-bottom:12px; }
+.meeting-task-list { max-height:280px; overflow:auto; display:grid; gap:12px; padding:4px; }
+.meeting-task-list .check-label { align-items:flex-start; gap:12px; }
+.meeting-task-list small { display:block; color:var(--t-secondary); font-size:13px; margin-top:4px; }
+.task-minutes-view { padding:24px; overflow-wrap:anywhere; }
+.task-minutes-view .section-head { gap:16px; }
