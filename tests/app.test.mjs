@@ -60,7 +60,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-action','close');
  });
  await t.test('parallel people picker saves equal participants and paused stage',async()=>{
-  await click('data-action','task');const editor=nodes.get('#editor').innerHTML;assert.ok(!editor.includes('주 담당자'));assert.match(editor,/함께 맡는 사람 모두 선택/);
+  await click('data-action','task');const editor=nodes.get('#editor').innerHTML;assert.ok(!editor.includes('주 담당자'));assert.match(editor,/여러 명을 선택할 수 있어요/);
   const values={title:'동등 공동 업무',visibility:'shared',projectId:'p',status:'보류 중',priority:'보통',start:'',due:'',hours:'1',kpiId:'',url:'',note:'',collaborator:['jh','sy']};
   await submit('task',values,'parallel-task');const saved=await item('tasks','parallel-task');assert.equal(saved.assignee,'');assert.deepEqual(saved.collaborators,['jh','sy']);assert.equal(saved.status,'검토 요청');
   await click('data-nav','collab');assert.match(nodes.get('#app').innerHTML,/보류 중/);assert.ok(!/>검토 요청</.test(nodes.get('#app').innerHTML));
@@ -121,7 +121,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   store.uploadAttachment=async()=>attachment;store.removeAttachment=async a=>removed.push(a.path);
   await click('data-action','artifact','p');await submit('artifact',{title:'PDF 결과',projectId:'p',url:'',file},'file-result');assert.deepEqual((await item('artifacts','file-result')).attachment,attachment);
   await click('data-action','artifact-edit','file-result');await submit('artifact',{title:'PDF 결과 수정',projectId:'p',url:''},'file-result');assert.equal((await item('artifacts','file-result')).attachment.path,path);assert.equal(removed.length,0);
-  await click('data-nav','archive');assert.match(nodes.get('#app').innerHTML,/test.pdf/);assert.match(nodes.get('#app').innerHTML,/artifact-download/);
+  await click('data-nav','archive');assert.match(nodes.get('#app').innerHTML,/test.pdf/);assert.match(nodes.get('#app').innerHTML,/artifact-preview/);
   const failedPath=path.replace('000000000002.pdf','000000000003.pdf');store.uploadAttachment=async()=>({...attachment,path:failedPath});
   await click('data-action','artifact','p');await submit('artifact',{title:'잘못된 프로젝트',projectId:'missing',url:'',file},'failed-result');assert.ok(!await item('artifacts','failed-result'));assert.deepEqual(removed,[failedPath]);assert.equal((await item('artifacts','file-result')).attachment.path,path);assert.equal(nodes.get('#editor').open,true);await click('data-action','close');
  });
@@ -149,6 +149,17 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   for(let i=0;i<6;i++){await click('data-action','project');await submit('project',{title:'순위 프로젝트 '+i,goal:'',owner:'sj',start:'',due:'',priority:i===5?'높음':'낮음'},'rank-p'+i);await click('data-action','task');await submit('task',{title:'순위 업무 '+i,visibility:'shared',assignee:'sj',projectId:'rank-p'+i,status:'진행 중',priority:i===5?'높음':'낮음',start:'',due:'',hours:'0',url:'',note:'',kpiId:''},'rank-t'+i);}
   await click('data-nav','dashboard');const html=nodes.get('#app').innerHTML;assert.equal((html.match(/class="project-card"/g)||[]).length,4);assert.equal((html.match(/class="task-line"/g)||[]).length,4);assert.ok(html.indexOf('순위 프로젝트 5')<html.indexOf('test project'));assert.ok(html.indexOf('순위 업무 5')<html.indexOf('순위 업무 0'));
   await click('data-action','dashboard-all-tasks');assert.match(nodes.get('#app').innerHTML,/순위 업무 4/);assert.match(nodes.get('#app').innerHTML,/순위 업무 5/);
+ });
+ await t.test('task editing uploads private files, preserves on ordinary edit, cleans conflicts and removes attachments',async()=>{
+  const file=new File(['%PDF-1.7'],'task.pdf',{type:'application/pdf'}),attachment={bucket:'workwith-task-files',path:'00000000-0000-4000-8000-000000000001/t/00000000-0000-4000-8000-000000000005.pdf',name:file.name,type:file.type,size:file.size};const removed=[];
+  store.uploadAttachment=async(f,options)=>{assert.equal(f,file);assert.equal(options.taskId,'t');return attachment;};store.removeAttachment=async a=>removed.push(a.path);
+  const old=await item('tasks','t');await click('data-action','task','t');assert.match(nodes.get('#editor').innerHTML,/어떤 일을 진행하나요/);assert.match(nodes.get('#editor').innerHTML,/<details/);assert.match(nodes.get('#editor').innerHTML,/type="radio" name="status"/);
+  await submit('task',{...old,file},'t');assert.deepEqual((await item('tasks','t')).attachment,attachment);assert.equal((await item('tasks','t')).visibility,'private');
+  await click('data-nav','archive');assert.match(nodes.get('#app').innerHTML,/task-preview/);
+  const attached=await item('tasks','t');await click('data-action','task','t');await submit('task',{...attached,title:'파일 유지'},'t');assert.deepEqual((await item('tasks','t')).attachment,attachment);assert.equal(removed.length,0);
+  const conflictAttachment={...attachment,path:attachment.path.replace('000000000005.pdf','000000000006.pdf')};store.uploadAttachment=async()=>conflictAttachment;
+  await click('data-action','task','t');const fresh=await pg.repository.load();await mutate(pg.repository,{action:{type:'task.save',value:{...attached,title:'다른 수정'}},revision:fresh.state.revision,baseVersion:fresh.versions['tasks:t']},'sj');await submit('task',{...attached,file},'t');assert.deepEqual(removed,[conflictAttachment.path]);assert.deepEqual((await item('tasks','t')).attachment,attachment);assert.equal((await item('tasks','t')).title,'다른 수정');assert.equal(nodes.get('#editor').open,true);await click('data-action','close');
+  await click('data-action','task','t');await submit('task',{...await item('tasks','t'),removeAttachment:'on'},'t');assert.equal((await item('tasks','t')).attachment,null);
  });
  await pg.close();
 });

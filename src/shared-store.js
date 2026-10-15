@@ -1,5 +1,5 @@
 import {SUPABASE_URL,SUPABASE_KEY} from './config.js';
-import {ATTACHMENT_BUCKET,ATTACHMENT_TYPES,attachmentBytes,validAttachment} from './attachments.js';
+import {ATTACHMENT_BUCKET,TASK_ATTACHMENT_BUCKET,ATTACHMENT_TYPES,attachmentBytes,validAttachment} from './attachments.js';
 export class SharedStore{
  constructor(fetcher=(...args)=>fetch(...args),storage=sessionStorage,config={url:SUPABASE_URL,key:SUPABASE_KEY}){
   this.fetcher=fetcher;this.storage=storage;this.config=config;this.refreshing=null;this.recoveryPending=storage.getItem('workwith-recovery-pending')==='1';
@@ -64,11 +64,12 @@ export class SharedStore{
   throw Error('지원하지 않는 요청입니다.');
  }
  async read(){return this.http('/rest/v1/rpc/workwith_snapshot',{},await this.access());}
- async uploadAttachment(file){
+ async uploadAttachment(file,{taskId}={}){
   const bytes=await attachmentBytes(file),token=await this.access();
   const user=await this.http('/auth/v1/user',undefined,token);
   if(!user.id||!/^[0-9a-f-]{36}$/i.test(user.id))throw Error('파일 소유자를 확인할 수 없습니다.');
-  const attachment={bucket:ATTACHMENT_BUCKET,path:user.id+'/'+crypto.randomUUID()+'.'+ATTACHMENT_TYPES[file.type],name:file.name,type:file.type,size:file.size};
+  if(taskId!==undefined&&!/^[a-zA-Z0-9_-]{1,100}$/.test(taskId))throw Error('업무 파일 경로를 확인하세요.');
+  const attachment={bucket:taskId?TASK_ATTACHMENT_BUCKET:ATTACHMENT_BUCKET,path:user.id+'/'+(taskId?taskId+'/':'')+crypto.randomUUID()+'.'+ATTACHMENT_TYPES[file.type],name:file.name,type:file.type,size:file.size};
   if(!validAttachment(attachment))throw Error('첨부 파일 정보를 확인하세요.');
   const r=await this.fetcher(this.config.url+'/storage/v1/object/'+attachment.bucket+'/'+attachment.path,{method:'POST',headers:{apikey:this.config.key,Authorization:'Bearer '+token,'Content-Type':file.type,'x-upsert':'false'},body:bytes});
   if(!r.ok)throw Error('파일 업로드에 실패했습니다. 저장소 연결·권한 또는 무료 용량을 확인하세요.');
@@ -81,7 +82,9 @@ export class SharedStore{
  }
  async removeAttachment(attachment){
   if(!validAttachment(attachment))throw Error('첨부 파일 정보가 올바르지 않습니다.');
-  return this.http('/storage/v1/object/'+attachment.bucket,{prefixes:[attachment.path]},await this.access(),'DELETE');
+  const removed=await this.http('/storage/v1/object/'+attachment.bucket,{prefixes:[attachment.path]},await this.access(),'DELETE');
+  if(!Array.isArray(removed)||!removed.some(file=>file.name===attachment.path))throw Error('파일 삭제를 확인하지 못했습니다. 파일 소유자 또는 관리자에게 정리를 요청하세요.');
+  return removed;
  }
  async version(){return this.http('/rest/v1/rpc/workwith_revision',{},await this.access());}
  async change(action,revision,baseVersion){return this.http('/functions/v1/workspace',{action,revision,baseVersion},await this.access());}

@@ -1,0 +1,6 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {renderPdf} from '../src/pdf-preview.js';
+test('PDF pages render sequentially, page controls respect boundaries and close releases worker',async()=>{
+ const listeners={},nodes={canvas:{getContext:()=>({})},'[data-pdf-prev]':{addEventListener:(n,f)=>listeners.prev=f},'[data-pdf-next]':{addEventListener:(n,f)=>listeners.next=f},'[data-pdf-count]':{}};let destroyed=0;const pages=[],container={isConnected:true,clientWidth:600,querySelector:s=>nodes[s]};
+ const loadLibrary=async()=>({GlobalWorkerOptions:{},getDocument:options=>{assert.equal(options.isEvalSupported,false);assert.equal(options.enableXfa,false);return {promise:Promise.resolve({numPages:2,getPage:async n=>{pages.push(n);return {getViewport:()=>({width:600,height:800}),render:()=>({promise:Promise.resolve(),cancel(){}})};}}),destroy:async()=>{destroyed++;}};}});
+ const cleanup=await renderPdf(new Blob(['%PDF']),container,{loadLibrary});assert.equal(nodes['[data-pdf-prev]'].disabled,true);assert.equal(nodes['[data-pdf-next]'].disabled,false);await listeners.next();assert.equal(nodes['[data-pdf-count]'].textContent,'2 / 2 페이지');assert.equal(nodes['[data-pdf-next]'].disabled,true);await listeners.prev();assert.deepEqual(pages,[1,2,1]);cleanup();assert.equal(destroyed,1);
+});
