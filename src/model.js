@@ -1,5 +1,5 @@
 export const USERS = [{id:'ceo',name:'대표님',initial:'대'},{id:'sj',name:'정승재',initial:'재'},{id:'sy',name:'양승연',initial:'연'},{id:'jh',name:'최재희',initial:'희'}];
-import {validAttachment} from './attachments.js';
+import {validAttachment,ATTACHMENT_BUCKET,TASK_ATTACHMENT_BUCKET} from './attachments.js';
 export const STATUSES=['예정','진행 중','검토 요청','완료'];
 export const taskStatus=status=>status==='보류 중'?'검토 요청':status;
 export const statusLabel=status=>taskStatus(status)==='검토 요청'?'보류 중':status;
@@ -32,6 +32,7 @@ export function validate(state){
  }
  for(const k of state.kpis)required(project(k.projectId)&&str(k.title,200)&&k.title.trim()&&str(k.unit,50)&&['increase','decrease','manual'].includes(k.method)&&Number.isFinite(k.target)&&k.target>=0&&Number.isFinite(k.current)&&k.current>=0,'KPI 값 오류');
  for(const t of state.tasks){
+  required(!t.attachment||(validAttachment(t.attachment)&&t.attachment.bucket===TASK_ATTACHMENT_BUCKET&&t.attachment.path.split('/')[1]===t.id),'업무 첨부 파일 연결 오류');
   const collaborators=t.collaborators??[];
   required(Array.isArray(collaborators)&&collaborators.length<=USERS.length&&new Set(collaborators).size===collaborators.length&&collaborators.every(id=>id&&userOK(id)&&id!==t.assignee),'협업자 값 오류');
   required(t.visibility!=='private'||collaborators.length===0,'개인 업무에는 협업자를 지정할 수 없습니다.');
@@ -46,7 +47,7 @@ export function validate(state){
  const visited=new Set(),pending=new Set();
  function visit(id){required(!pending.has(id),'업무 의존 관계에 순환이 있습니다.');if(visited.has(id))return;pending.add(id);for(const dep of state.tasks.find(t=>t.id===id).dependencies)visit(dep);pending.delete(id);visited.add(id);}
  state.tasks.forEach(t=>visit(t.id));
- for(const a of state.artifacts)required(project(a.projectId)&&str(a.title,200)&&a.title.trim()&&str(a.url,2000)&&(!a.url||safeURL(a.url))&&(!a.attachment||validAttachment(a.attachment))&&(a.url||a.attachment),'결과물 링크 또는 첨부 파일 오류');
+ for(const a of state.artifacts)required(project(a.projectId)&&str(a.title,200)&&a.title.trim()&&str(a.url,2000)&&(!a.url||safeURL(a.url))&&(!a.attachment||validAttachment(a.attachment)&&a.attachment.bucket===ATTACHMENT_BUCKET)&&(a.url||a.attachment),'결과물 링크 또는 첨부 파일 오류');
  for(const m of state.minutes)required((!m.projectId||project(m.projectId))&&(!m.projectIds||Array.isArray(m.projectIds)&&new Set(m.projectIds).size===m.projectIds.length&&m.projectIds.every(project))&&str(m.title,200)&&m.title.trim()&&str(m.body,50000)&&userOK(m.author)&&m.author&&str(m.at,100),'회의록 형식 오류');
  for(const h of state.history)required(str(h.at,100)&&userOK(h.actor)&&h.actor&&str(h.message,1000)&&['shared','private'].includes(h.visibility)&&userOK(h.owner)&&str(h.projectId,100),'이력 형식 오류');
  return state;
@@ -68,6 +69,7 @@ export function change(state,action,actor){
   required(v.visibility!=='private'||v.owner===actor,'다른 사용자의 개인 업무를 생성할 수 없습니다.');
   required(!old||old.owner===v.owner,'업무 소유자는 변경할 수 없습니다.');
   const t={...v,status:taskStatus(v.status),collaborators:v.collaborators??old?.collaborators??[],completedAt:v.status==='완료'?(old?.completedAt||today()):''};
+  if(v.attachment===undefined&&old?.attachment)t.attachment=old.attachment;
   const datesChanged=old&&(old.start!==t.start||old.due!==t.due);
   required(!datesChanged||action.reason?.trim(),'일정 변경 사유를 입력하세요.');
   if(t.status==='완료')required(t.dependencies.every(id=>s.tasks.find(x=>x.id===id)?.status==='완료'),'선행 업무를 완료한 후 완료 처리하세요.');

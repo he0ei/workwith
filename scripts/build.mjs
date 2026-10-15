@@ -1,5 +1,6 @@
 import {mkdir,copyFile,cp,rm,writeFile,readFile} from 'node:fs/promises';
 import './build-functions.mjs';
+import './prepare-pdf.mjs';
 const url=process.env.SUPABASE_URL||'',key=process.env.SUPABASE_PUBLISHABLE_KEY||'';
 if(Boolean(url)!==Boolean(key))throw Error('Supabase URL과 공개 키를 함께 설정하세요.');
 if(url&&!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(url))throw Error('올바른 Supabase Project URL이 필요합니다.');

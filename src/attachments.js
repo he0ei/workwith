@@ -1,8 +1,9 @@
 export const ATTACHMENT_BUCKET='workwith-artifacts';
+export const TASK_ATTACHMENT_BUCKET='workwith-task-files';
 export const MAX_ATTACHMENT_BYTES=5*1024*1024;
 export const ATTACHMENT_TYPES={'image/jpeg':'jpg','image/png':'png','image/webp':'webp','application/pdf':'pdf'};
 const uuid='[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
-export function validAttachment(a){return Boolean(a&&a.bucket===ATTACHMENT_BUCKET&&typeof a.name==='string'&&a.name.length>0&&a.name.length<=200&&!/[\x00-\x1f]/.test(a.name)&&Number.isInteger(a.size)&&a.size>0&&a.size<=MAX_ATTACHMENT_BYTES&&ATTACHMENT_TYPES[a.type]&&new RegExp('^'+uuid+'/'+uuid+'\\.'+ATTACHMENT_TYPES[a.type]+'$','i').test(a.path));}
+export function validAttachment(a){return Boolean(a&&[ATTACHMENT_BUCKET,TASK_ATTACHMENT_BUCKET].includes(a.bucket)&&typeof a.name==='string'&&a.name.length>0&&a.name.length<=200&&!/[\x00-\x1f]/.test(a.name)&&Number.isInteger(a.size)&&a.size>0&&a.size<=MAX_ATTACHMENT_BYTES&&ATTACHMENT_TYPES[a.type]&&new RegExp('^'+uuid+'/'+(a.bucket===TASK_ATTACHMENT_BUCKET?'[a-zA-Z0-9_-]{1,100}/':'')+uuid+'\\.'+ATTACHMENT_TYPES[a.type]+'$','i').test(a.path));}
 export async function attachmentBytes(file){
  if(!file||!ATTACHMENT_TYPES[file.type])throw Error('JPG·PNG·WebP 이미지 또는 PDF만 첨부할 수 있습니다.');
  if(!file.name||file.name.length>200||/[\x00-\x1f]/.test(file.name))throw Error('파일 이름을 확인하세요.');

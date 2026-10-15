@@ -5,6 +5,12 @@ import {sample} from './fixtures.mjs';
 const task=(v={})=>({id:'t1',title:'업무',note:'메모',owner:'sj',assignee:'sj',visibility:'shared',projectId:'',status:'예정',priority:'보통',start:'2026-10-12',due:'2026-10-13',hours:2,completedAt:'',url:'',kpiId:'',dependencies:[],...v});
 const save=(s,t,actor='sj',reason='')=>change(s,{type:'task.save',value:t,reason},actor);
 const project={id:'p1',title:'프로젝트',goal:'목표',owner:'sj',start:'',due:''};
+test('업무 첨부는 업무 전용 경로에 연결하며 개인 정보와 기존 첨부를 보존',()=>{
+ const attachment={bucket:'workwith-task-files',path:'00000000-0000-4000-8000-000000000001/t1/00000000-0000-4000-8000-000000000002.pdf',name:'result.pdf',type:'application/pdf',size:10};let s=save(empty(),task({visibility:'private',attachment}));const old={...s.tasks[0]};delete old.attachment;s=save(s,{...old,status:'진행 중'});assert.deepEqual(s.tasks[0].attachment,attachment);assert.equal(visibleTasks(s,'sy').length,0);
+ assert.throws(()=>save(empty(),task({attachment:{...attachment,path:attachment.path.replace('/t1/','/t2/')}})),/업무 첨부/);
+ s=change(s,{type:'project.save',value:project},'sj');assert.throws(()=>change(s,{type:'artifact.save',value:{id:'a',projectId:'p1',title:'공유 노출 시도',url:'',attachment}},'sj'),/결과물/);
+ s=save(s,{...s.tasks[0],attachment:null});assert.equal(s.tasks[0].attachment,null);
+});
 test('프로젝트 완료와 재개는 연결 업무를 보존하고 날짜와 이력을 기록',()=>{
  let s=change(empty(),{type:'project.save',value:project},'sj');s=save(s,task({projectId:'p1'}));const tasks=structuredClone(s.tasks);
  s=change(s,{type:'project.save',value:{...s.projects[0],status:'완료',priority:'높음'}},'sj');assert.ok(s.projects[0].completedAt);assert.deepEqual(s.tasks,tasks);assert.match(s.history.at(-1).message,/프로젝트 완료/);
