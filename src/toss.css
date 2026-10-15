@@ -14,6 +14,7 @@
  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
  color:var(--t-text);font-size:14px;line-height:1.5;
 }
+
 body { background:var(--t-canvas); color:var(--t-text); }
 h1,h2,h3,h4 { color:var(--t-text); letter-spacing:-.5px; }
 h1 { font-size:32px; font-weight:750; line-height:1.35; }
@@ -216,4 +217,73 @@ footer { color:var(--t-muted); font-size:10px; margin-top:28px; }
  dialog { padding:24px 20px; width:calc(100vw - 24px); border-radius:22px; }.modal-actions { flex-wrap:wrap; }.modal-actions button { padding:12px 16px; }
  .attachment-drop { padding:20px 16px; gap:12px; }.attachment-drop strong { font-size:13px; }.attachment-drop p { font-size:11px; }
  .auth-panel { padding:32px 24px; }.auth-panel h1 { font-size:26px; }.auth-panel .brand { padding-bottom:28px; }
+}
+
+/* Reading scale: preserve readable content on narrow screens instead of shrinking it. */
+:root { font-size:16px; }
+button { font-size:15px; }
+.text-btn { font-size:14px; }
+nav button>.nav-text { font-size:15px; }
+.workspace { font-size:14px; }.workspace small { font-size:12px; }
+.brand small { font-size:10px; }
+.breadcrumb,.user-switch strong { font-size:14px; }
+.demo-banner { font-size:13px; gap:12px; }.demo-banner>span { flex:1; min-width:0; }.demo-banner .text-btn { font-size:12px; flex:none; }
+.page-heading p { font-size:16px; word-break:keep-all; }
+.heading-actions button { font-size:15px; }
+.stat-heading h2 { font-size:15px; }.stat-caption,.stat-number>span { font-size:14px; }
+.section-head h3 { font-size:20px; }.section-head>small { font-size:13px; }
+.dashboard-overview>.dashboard-projects,.dashboard-overview>.dashboard-week { min-height:576px; }
+.dashboard-panel-list>.project-card { min-height:116px; }
+.dashboard-panel-list>.task-line { min-height:82px; }
+.dashboard-panel-list>.task-line strong { font-size:16px; }
+.task-line small,.project-card small { font-size:13px; line-height:1.5; }
+.dashboard-task-info>small { font-size:13px; }
+.project-card strong { font-size:17px; }.project-card>div:not(.project-completion) { min-width:0; }
+.project-count small { font-size:12px; }.project-count { font-size:18px; }
+.project-card .project-tags .badge,.project-card .project-tags .priority { font-size:12px; }
+.badge,.priority { font-size:13px; }
+.column h3 { font-size:16px; }.count { font-size:13px; }
+.task-card .task-title { font-size:18px; line-height:1.55; }
+.project-chip { font-size:14px; padding:6px 10px; }
+.project-colored { position:relative; isolation:isolate; overflow:hidden; padding-left:13px; color:#191f28; background:transparent; }
+.project-chip-paint { position:absolute; inset:0; width:100%; height:100%; z-index:-1; }
+.project-colored>span { position:relative; word-break:keep-all; overflow-wrap:anywhere; }
+.task-card .task-title,.workspace small { word-break:keep-all; overflow-wrap:anywhere; }
+.task-meta,.person-chip { font-size:14px; }.task-meta .due { font-size:13px; }.task-meta .avatar { width:28px; height:28px; font-size:12px; }
+.dependency { font-size:13px; }.status-control { font-size:14px; min-height:42px; }
+.column-empty { font-size:14px; }
+.pills button { font-size:14px; min-height:44px; }
+label,.task-editor label,.task-editor legend { font-size:15px; }
+input,select,textarea,.auth-panel input { font-size:16px; }
+.task-editor input:not([type=checkbox]):not([type=radio]):not([type=file]),.task-editor select,.task-editor textarea { font-size:16px; }
+.task-help,.task-edit-section summary>span,.task-edit-tabs button { font-size:14px; }
+.choice>span { font-size:15px; }
+.project-state { font-size:15px; }.project-facts span { font-size:14px; }.project-facts strong { font-size:16px; }
+.kpi-row strong { font-size:16px; }.kpi-row small { font-size:13px; }
+.weekday { font-size:14px; }.day>span { font-size:15px; }.calendar-event { font-size:13px; }.calendar-event small { font-size:12px; }
+.minute summary { font-size:17px; }.minute summary small,.minutes-date-group small { font-size:14px; }.minute .prewrap { font-size:16px; }
+.artifact strong { font-size:17px; }.artifact small { font-size:14px; }.artifact a { font-size:15px; }.artifact-files button { font-size:14px; }
+.attachment-drop strong { font-size:16px; }.attachment-drop p,.attachment-drop .text-btn { font-size:14px; }
+.empty p { font-size:16px; }.empty small { font-size:14px; }
+.settings-panel dt,.settings-panel dd,.history { font-size:16px; }.history small { font-size:14px; }
+.preview-header h2 { font-size:19px; }.preview-footer p,.pdf-controls { font-size:14px; }
+.auth-panel p { font-size:16px; }.auth-panel .footnote { font-size:14px; }
+#form-error,#login-error,#recovery-status { font-size:15px; }
+footer { font-size:12px; }
+@media(max-width:1100px) { .board { grid-template-columns:repeat(4,minmax(280px,1fr)); } }
+@media(max-width:980px) { .dashboard-overview>.dashboard-projects,.dashboard-overview>.dashboard-week { min-height:0; } }
+@media(max-width:580px) {
+ .page-heading p { font-size:15px; }.heading-actions button { font-size:14px; }
+ nav button>.nav-text { font-size:14px; }.breadcrumb { font-size:13px; }
+ .stat-heading h2 { font-size:14px; }.stat-caption { font-size:13px; }
+ .section-head h3 { font-size:19px; }.section-head .text-btn { font-size:14px; }
+ .project-card strong { font-size:16px; }.project-card small { font-size:13px; }.project-count { font-size:17px; }
+ .project-card .priority,.project-card .badge { font-size:12px; }
+ .dashboard-panel-list>.task-line strong { font-size:16px; }.dashboard-task-info>small { font-size:13px; }
+ .pills button { font-size:14px; }.person-chip { font-size:14px; }
+ .board { grid-template-columns:repeat(4,minmax(280px,1fr)); }
+ .calendar { grid-template-columns:repeat(7,minmax(108px,1fr)); }
+ .minute summary { font-size:16px; }.minute summary small { font-size:14px; }
+ .artifact strong { font-size:16px; }.settings-panel dt { font-size:14px; }.settings-panel dd { font-size:16px; }
+ .attachment-drop strong { font-size:15px; }.attachment-drop p { font-size:14px; }
 }

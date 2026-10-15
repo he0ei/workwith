@@ -1,5 +1,6 @@
 import {USERS,STATUSES,PRIORITIES,today,dateOK,uid,safeURL,visibleTasks,participates,taskPeople,taskStatus,statusLabel,kpiProgress,filterTasks,projectStatus,priorityOrder,sortedProjects} from './model.js';
 import {createFilePreview} from './file-preview.js';
+import {projectColors} from './project-colors.js';
 import {icon} from './icons.js';
 import {SharedStore} from './shared-store.js';
 import {DesignPreviewStore} from './preview-store.js';
@@ -8,7 +9,7 @@ export async function start(store=null){
 const previewMode=location.protocol==='file:'||new URLSearchParams(location.search||'').get('preview')==='1';
 store=previewMode?new DesignPreviewStore():(store||new SharedStore());
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let filePreview;
+let filePreview,projectColorMap=new Map();
 const openPreview=async attachment=>{filePreview??=createFilePreview($('#file-preview'),{load:a=>store.downloadAttachment(a)});await filePreview.show(attachment);};
 const recentStatusIds=new Set();let artifactSaving=false,stagedArtifactFile=null,sidebarCollapsed=false;
 let versions={},editBase=null,busy=false,syncing=false,syncTimer,lastSync='',connected=false;let state,user='sj',view='dashboard',selected='',filter='all',assignee='',query='',month=today().slice(0,7),minutesText='',minutesTitle='',minutesDate=today(),minutesProject='',minutesFilter='',timer;
@@ -23,7 +24,7 @@ const select=(label,name,options)=>`<label>${label}<select name="${name}">${opti
 const textarea=(label,name,value='',extra='')=>`<label class="wide">${label}<textarea name="${name}" ${extra}>${esc(value)}</textarea></label>`;
 const emptyCard=(text='표시할 항목이 없습니다.')=>`<div class="empty"><span>＋</span><p>${text}</p><small>작은 업무부터 하나씩 연결해 보세요.</small></div>`;
 function toast(message){$('#toast').textContent=message;$('#toast').classList.add('show');clearTimeout(timer);timer=setTimeout(()=>$('#toast').classList.remove('show'),4000);}
-function accept(result){state={...result.state,tasks:result.state.tasks.map(t=>({...t,status:taskStatus(t.status)}))};versions=result.versions;user=result.user;lastSync=new Date().toLocaleTimeString('ko-KR');connected=!store.preview;}
+function accept(result){state={...result.state,tasks:result.state.tasks.map(t=>({...t,status:taskStatus(t.status)}))};projectColorMap=projectColors(state.projects);versions=result.versions;user=result.user;lastSync=new Date().toLocaleTimeString('ko-KR');connected=!store.preview;}
 async function commit(action,base=editBase){
  if(busy)throw Error('저장이 진행 중입니다.');busy=true;
  try{
@@ -51,8 +52,8 @@ const boardDrag=installBoardDrag(document,{
 const late=t=>t.due&&t.due<today()&&t.status!=='완료';
 const peopleLabel=t=>taskPeople(t).map(id=>names[id]).join(' · ')||'미지정';
 function badge(t){return `<span class="badge status-${STATUSES.indexOf(t.status)}">${esc(statusLabel(t.status))}</span>`;}
-function projectTone(id){let hash=0;for(const char of id)hash=(Math.imul(hash,31)+char.charCodeAt(0))>>>0;return hash%8;}
-function taskCard(t,draggable=false){const p=state.projects.find(p=>p.id===t.projectId);return `<article class="task-card ${late(t)?'overdue':''}" data-task-card data-action="task" data-id="${esc(t.id)}" ${draggable?`draggable="true" data-drag-task="${esc(t.id)}"`:''}><button class="task-title" data-action="task" data-id="${esc(t.id)}">${esc(t.title)}</button><div class="card-top"><span class="project-chip ${p?'project-chip-'+projectTone(p.id):'project-chip-neutral'}" ${p?`data-project="${esc(p.id)}"`:''}>${esc(p?.title||(t.visibility==='private'?'나만 보는 업무':'공유 업무'))}</span><span class="priority ${t.priority==='높음'?'high':''}">${esc(t.priority)}</span></div><div class="task-meta"><span class="task-people">${taskPeople(t).map(id=>`<span class="person-chip"><span class="avatar avatar-${esc(id)}">${esc(USERS.find(u=>u.id===id)?.initial)}</span>${esc(names[id])}</span>`).join('')||'<span>미지정</span>'}</span><span class="due ${late(t)?'red':''}">${t.due?esc(t.due.slice(5)):'일정 미정'}</span></div>${t.dependencies.length?`<small class="dependency">↳ 선행 업무 ${t.dependencies.length}개 · ${t.dependencies.every(id=>state.tasks.find(x=>x.id===id)?.status==='완료')?'준비 완료':'대기 중'}</small>`:''}<select class="status-control" aria-label="${esc(t.title)} 상태" data-status="${esc(t.id)}">${STATUSES.map(s=>option(s,statusLabel(s),t.status)).join('')}</select></article>`;}
+function projectChip(p,fallback){if(!p)return `<span class="project-chip project-chip-neutral">${esc(fallback)}</span>`;const tone=projectColorMap.get(p.id);return `<span class="project-chip project-colored" data-project="${esc(p.id)}"><svg class="project-chip-paint" aria-hidden="true" focusable="false"><rect width="100%" height="100%" fill="${tone.background}"/><rect width="4" height="100%" fill="${tone.accent}"/></svg><span>${esc(p.title)}</span></span>`;}
+function taskCard(t,draggable=false){const p=state.projects.find(p=>p.id===t.projectId);return `<article class="task-card ${late(t)?'overdue':''}" data-task-card data-action="task" data-id="${esc(t.id)}" ${draggable?`draggable="true" data-drag-task="${esc(t.id)}"`:''}><button class="task-title" data-action="task" data-id="${esc(t.id)}">${esc(t.title)}</button><div class="card-top">${projectChip(p,t.visibility==='private'?'나만 보는 업무':'공유 업무')}<span class="priority ${t.priority==='높음'?'high':''}">${esc(t.priority)}</span></div><div class="task-meta"><span class="task-people">${taskPeople(t).map(id=>`<span class="person-chip"><span class="avatar avatar-${esc(id)}">${esc(USERS.find(u=>u.id===id)?.initial)}</span>${esc(names[id])}</span>`).join('')||'<span>미지정</span>'}</span><span class="due ${late(t)?'red':''}">${t.due?esc(t.due.slice(5)):'일정 미정'}</span></div>${t.dependencies.length?`<small class="dependency">↳ 선행 업무 ${t.dependencies.length}개 · ${t.dependencies.every(id=>state.tasks.find(x=>x.id===id)?.status==='완료')?'준비 완료':'대기 중'}</small>`:''}<select class="status-control" aria-label="${esc(t.title)} 상태" data-status="${esc(t.id)}">${STATUSES.map(s=>option(s,statusLabel(s),t.status)).join('')}</select></article>`;}
 function kpiCard(k){const n=kpiProgress(k);return `<div class="kpi-row"><div><strong>${esc(k.title)}</strong><small>${esc(state.projects.find(p=>p.id===k.projectId)?.title||'')} · ${k.method==='increase'?'현재 ÷ 목표':k.method==='decrease'?'목표 이하 달성':'수동 기록'}</small></div><div class="kpi-value">${k.current}<span> / ${k.target} ${esc(k.unit)}</span></div>${n!==null?`<progress max="100" value="${n}" aria-label="${esc(k.title)} 달성률"></progress><small>${Math.round(n)}%</small>`:'<small>자동 계산 없음</small>'}</div>`;}
 function dashboard(){const all=tasks(),active=all.filter(t=>t.status==='진행 중').sort(priorityOrder),overdue=all.filter(late);return `<section class="stats" aria-label="업무 핵심 지표">${[
  {label:'진행 프로젝트',value:state.projects.filter(p=>projectStatus(p)!=='완료').length,caption:'완료 전 프로젝트',symbol:'projects',tone:'projects'},
