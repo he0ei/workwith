@@ -4,6 +4,9 @@ export const STATUSES=['예정','진행 중','검토 요청','완료'];
 export const taskStatus=status=>status==='보류 중'?'검토 요청':status;
 export const statusLabel=status=>taskStatus(status)==='검토 요청'?'보류 중':status;
 export const PRIORITIES=['높음','보통','낮음'];
+export const projectStatus=p=>p.status||'진행 중';
+export const priorityOrder=(a,b)=>PRIORITIES.indexOf(a.priority||'보통')-PRIORITIES.indexOf(b.priority||'보통')||(a.due||'9999').localeCompare(b.due||'9999')||a.title.localeCompare(b.title,'ko');
+export const sortedProjects=projects=>[...projects].sort((a,b)=>Number(projectStatus(a)==='완료')-Number(projectStatus(b)==='완료')||priorityOrder(a,b));
 export const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());
 export const uid=()=>crypto.randomUUID();
 export const empty=()=>({version:1,revision:0,projects:[],tasks:[],kpis:[],artifacts:[],minutes:[],history:[]});
@@ -23,7 +26,10 @@ export function validate(state){
   const ids=new Set();for(const x of state[key]){required(x&&str(x.id,100)&&x.id&&!ids.has(x.id),`${key} ID 오류`);ids.add(x.id);}
  }
  const project=id=>state.projects.some(p=>p.id===id);
- for(const p of state.projects)required(str(p.title,200)&&p.title.trim()&&str(p.goal)&&userOK(p.owner)&&dateOK(p.start)&&dateOK(p.due)&&(!p.start||!p.due||p.start<=p.due),'프로젝트 값 또는 일정 오류');
+ for(const p of state.projects){
+  required(str(p.title,200)&&p.title.trim()&&str(p.goal)&&userOK(p.owner)&&dateOK(p.start)&&dateOK(p.due)&&(!p.start||!p.due||p.start<=p.due),'프로젝트 값 또는 일정 오류');
+  required(['진행 중','완료'].includes(projectStatus(p))&&(!p.priority||PRIORITIES.includes(p.priority))&&dateOK(p.completedAt||'')&&(projectStatus(p)!=='완료'||Boolean(p.completedAt)),'프로젝트 상태 또는 우선순위 오류');
+ }
  for(const k of state.kpis)required(project(k.projectId)&&str(k.title,200)&&k.title.trim()&&str(k.unit,50)&&['increase','decrease','manual'].includes(k.method)&&Number.isFinite(k.target)&&k.target>=0&&Number.isFinite(k.current)&&k.current>=0,'KPI 값 오류');
  for(const t of state.tasks){
   const collaborators=t.collaborators??[];
@@ -76,7 +82,8 @@ export function change(state,action,actor){
  }else if(['project.save','kpi.save','artifact.save','minutes.save'].includes(action.type)){
   const key={'project.save':'projects','kpi.save':'kpis','artifact.save':'artifacts','minutes.save':'minutes'}[action.type];const i=s[key].findIndex(x=>x.id===v.id),old=s[key][i];
   const datesChanged=key==='projects'&&old&&(old.start!==v.start||old.due!==v.due);required(!datesChanged||action.reason?.trim(),'일정 변경 사유를 입력하세요.');
-  if(i<0)s[key].push(v);else s[key][i]=v;log(s,actor,`${i<0?'등록':'수정'}: ${v.title}${datesChanged?` · 시작 ${old.start||'미정'} → ${v.start||'미정'}, 마감 ${old.due||'미정'} → ${v.due||'미정'} · 사유: ${action.reason}`:''}`,v);
+  const saved=key==='projects'?{...v,status:v.status??old?.status??'진행 중',priority:v.priority??old?.priority??'보통',completedAt:(v.status??old?.status)==='완료'?(old?.completedAt||today()):''}:v;
+  if(i<0)s[key].push(saved);else s[key][i]=saved;log(s,actor,`${key==='projects'&&old&&projectStatus(old)!==projectStatus(saved)?(saved.status==='완료'?'프로젝트 완료':'프로젝트 재개'):i<0?'등록':'수정'}: ${v.title}${datesChanged?` · 시작 ${old.start||'미정'} → ${v.start||'미정'}, 마감 ${old.due||'미정'} → ${v.due||'미정'} · 사유: ${action.reason}`:''}`,saved);
  }else if(['kpi.delete','artifact.delete','minutes.delete'].includes(action.type)){
   const key={'kpi.delete':'kpis','artifact.delete':'artifacts','minutes.delete':'minutes'}[action.type];const item=s[key].find(x=>x.id===action.id);required(item,'항목이 없습니다.');s[key]=s[key].filter(x=>x.id!==action.id);if(key==='kpis')s.tasks.forEach(t=>{if(t.kpiId===action.id)t.kpiId='';});log(s,actor,`삭제: ${item.title}`,item);
  }else throw Error('알 수 없는 작업입니다.');
