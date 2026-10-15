@@ -246,6 +246,25 @@ dialog#file-preview { width:min(1000px,calc(100vw - 24px)); padding:0; border-ra
 .pdf-controls { display:flex; align-items:center; gap:12px; flex:none; font-size:12px; }
 .pdf-page { overflow:auto; width:100%; flex:1; text-align:center; }
 .pdf-page canvas { max-width:100%; height:auto; background:white; box-shadow:0 1px 8px #091e4226; }
+
+/* Balance four project summaries against six compact ongoing tasks. */
+.dashboard-overview { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; }
+.dashboard-overview>.dashboard-projects,.dashboard-overview>.dashboard-week { display:flex; flex-direction:column; min-height:472px; }
+.dashboard-overview .section-head { min-height:32px; flex:none; }
+.dashboard-panel-list { display:flex; flex-direction:column; flex:1; min-width:0; }
+.dashboard-panel-list>.project-card { flex:1; min-height:96px; }
+.dashboard-panel-list>.task-line { display:grid; grid-template-columns:16px minmax(0,1fr) auto; flex:1; min-height:64px; padding:10px 0; gap:10px; }
+.dashboard-panel-list>.task-line>span:nth-child(2) { min-width:0; }
+.dashboard-panel-list>.task-line strong { line-height:1.45; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.dashboard-panel-list>.task-line>span:nth-child(2)>small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dashboard-task-info { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+.dashboard-task-info>small { font-size:10px; margin:0; white-space:nowrap; }
+.dashboard-panel-list>.empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+@media(max-width:980px) {
+ .dashboard-overview { grid-template-columns:minmax(0,1fr); grid-template-areas:"projects" "week" "kpis"; }
+ .dashboard-overview>.dashboard-projects,.dashboard-overview>.dashboard-week { min-height:0; }
+ .dashboard-panel-list>.project-card,.dashboard-panel-list>.task-line { flex:none; }
+}
 .preview-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 24px; margin:0; font-size:12px; }
 .preview-footer p { margin:0; }
 @media(max-width:580px) {

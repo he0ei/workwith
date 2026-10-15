@@ -145,9 +145,9 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await submit('artifact',{title:'드롭 결과',projectId:'p',url:''},'drop-result');assert.equal(uploads,1);assert.equal((await item('artifacts','drop-result')).attachment.name,'dropped.pdf');
   await click('data-action','artifact','p');await listeners.drop({target:{closest:s=>s==='[data-file-drop]'?zone:null},dataTransfer:{files:[file]},preventDefault(){}});await click('data-action','close');assert.equal(uploads,1);
  });
- await t.test('dashboard limits each list to four, sorts by priority, and opens all ongoing tasks',async()=>{
+ await t.test('dashboard shows four projects and six tasks, sorts by priority, and opens all ongoing tasks',async()=>{
   for(let i=0;i<6;i++){await click('data-action','project');await submit('project',{title:'순위 프로젝트 '+i,goal:'',owner:'sj',start:'',due:'',priority:i===5?'높음':'낮음'},'rank-p'+i);await click('data-action','task');await submit('task',{title:'순위 업무 '+i,visibility:'shared',assignee:'sj',projectId:'rank-p'+i,status:'진행 중',priority:i===5?'높음':'낮음',start:'',due:'',hours:'0',url:'',note:'',kpiId:''},'rank-t'+i);}
-  await click('data-nav','dashboard');const html=nodes.get('#app').innerHTML;assert.equal((html.match(/class="project-card"/g)||[]).length,4);assert.equal((html.match(/class="task-line"/g)||[]).length,4);assert.ok(html.indexOf('순위 프로젝트 5')<html.indexOf('test project'));assert.ok(html.indexOf('순위 업무 5')<html.indexOf('순위 업무 0'));
+  await click('data-nav','dashboard');const html=nodes.get('#app').innerHTML;assert.equal((html.match(/class="project-card"/g)||[]).length,4);assert.equal((html.match(/class="task-line"/g)||[]).length,6);assert.ok(html.indexOf('순위 프로젝트 5')<html.indexOf('test project'));assert.ok(html.indexOf('순위 업무 5')<html.indexOf('순위 업무 0'));
   await click('data-action','dashboard-all-tasks');assert.match(nodes.get('#app').innerHTML,/순위 업무 4/);assert.match(nodes.get('#app').innerHTML,/순위 업무 5/);
  });
  await t.test('task editing uploads private files, preserves on ordinary edit, cleans conflicts and removes attachments',async()=>{
