@@ -243,7 +243,7 @@ nav button>.nav-text { font-size:15px; }
 .project-card .project-tags .badge,.project-card .project-tags .priority { font-size:12px; }
 .badge,.priority { font-size:13px; }
 .column h3 { font-size:16px; }.count { font-size:13px; }
-.task-card .task-title { font-size:18px; line-height:1.55; }
+.board .task-card .task-title { font-size:18px; line-height:1.55; }
 .project-chip { font-size:14px; padding:6px 10px; }
 .project-colored { position:relative; isolation:isolate; overflow:hidden; padding-left:13px; color:#191f28; background:transparent; }
 .project-chip-paint { position:absolute; inset:0; width:100%; height:100%; z-index:-1; }
@@ -256,6 +256,10 @@ nav button>.nav-text { font-size:15px; }
 label,.task-editor label,.task-editor legend { font-size:15px; }
 input,select,textarea,.auth-panel input { font-size:16px; }
 .task-editor input:not([type=checkbox]):not([type=radio]):not([type=file]),.task-editor select,.task-editor textarea { font-size:16px; }
+.task-editor .task-edit-intro { display:grid; gap:14px; padding:20px 0 24px; }
+.task-editor .task-description textarea { background:transparent; border-color:transparent; border-radius:8px; padding:12px 0; min-height:128px; font-size:16px; font-weight:400; line-height:1.75; }
+.task-editor .task-description textarea:hover { border-color:#e5e8eb; }
+.task-editor .task-description textarea:focus { background:#f9fafb; border-color:var(--t-accent); outline:2px solid var(--t-accent); outline-offset:1px; }
 .task-help,.task-edit-section summary>span,.task-edit-tabs button { font-size:14px; }
 .choice>span { font-size:15px; }
 .project-state { font-size:15px; }.project-facts span { font-size:14px; }.project-facts strong { font-size:16px; }

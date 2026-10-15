@@ -202,8 +202,7 @@ dialog.task-editor { width:min(680px,calc(100vw - 24px)); max-height:92vh; paddi
 .task-edit-intro,.task-edit-section { scroll-margin-top:140px; }
 .task-edit-intro { padding:20px 0 28px; }
 .task-edit-intro p { font-size:14px; color:#6b7684; margin-bottom:12px; }
-.task-edit-intro label { font-size:0; }
-.task-edit-intro input { font-size:23px!important; font-weight:700; padding:12px 0!important; border:0!important; background:#fff!important; border-radius:0!important; }
+.task-edit-intro input { font-size:16px; font-weight:500; }
 .task-edit-section { padding:24px 0; border:0; border-top:1px solid #f2f4f6; border-radius:0; }
 .task-edit-section h3 { font-size:17px; font-weight:700; margin-bottom:20px; color:#191f28; }
 .task-editor label { display:grid; gap:8px; color:#6b7684; font-size:13px; line-height:1.5; }
@@ -274,7 +273,6 @@ dialog#file-preview { width:min(1000px,calc(100vw - 24px)); padding:0; border-ra
  .task-edit-tabs button { padding:8px 10px; }
  .task-editor .modal-actions { padding:12px 20px 20px; }
  .task-editor .modal-actions button { padding:12px 14px; }
- .task-edit-intro input { font-size:21px!important; }
  .choice-row { gap:4px; }
  .choice>span { font-size:12px; }
  .preview-header,.preview-footer { padding:16px; }
