@@ -121,3 +121,17 @@ dialog{width:680px;border:1px solid #dfe1e6;border-radius:8px;padding:24px;color
 .minutes-date-group h4 { display: flex; gap: 8px; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #dfe1e6; }
 .minute-projects { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 @media (max-width: 580px) { .minutes-date-toolbar { flex-wrap: wrap; } }
+.task-card .task-title { display: block; width: 100%; font-size: 16px; font-weight: 700; line-height: 1.45; margin: 0 0 12px; text-align: left; padding: 0; }
+.task-card { cursor: pointer; }
+.task-card .card-top { margin-bottom: 14px; }
+.project-chip { display: inline-flex; align-items: center; border-radius: 6px; padding: 4px 9px; font-size: 12px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.project-chip-0 { background: #e9f2ff; color: #0747a6; }
+.project-chip-1 { background: #dcfff1; color: #216e4e; }
+.project-chip-2 { background: #f3f0ff; color: #5e4db2; }
+.project-chip-3 { background: #fff7d6; color: #7f5f01; }
+.project-chip-4 { background: #ffebe6; color: #ae2e24; }
+.project-chip-5 { background: #e7f9ff; color: #206a83; }
+.project-chip-6 { background: #ffecf8; color: #943d73; }
+.project-chip-7 { background: #e8f0e3; color: #466b30; }
+.project-chip-neutral { background: #f1f2f4; color: #44546f; }
+.artifact-files { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }

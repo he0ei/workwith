@@ -57,7 +57,17 @@ Supabase Free는 DB 500MB, egress 5GB, cached egress 5GB, 파일 1GB, MAU 50,000
 - https://supabase.com/pricing
 - https://supabase.com/docs/guides/database/postgres/row-level-security
 
-Realtime은 사용하지 않습니다. revision만 30초/60초 확인하고 변경 시에만 데이터를 받지만 전체 state 조회가 큰 경우 egress 비용/한도에 영향을 줍니다. 쌓이는 업무·이력은 측정 후 페이지 조회로 최적화합니다. 무료 플랜은 무제한 운영 보장이 아닙니다. 유료 API·유료 플랜·AI 기능·파일 저장은 기본 미사용입니다.
+Realtime은 사용하지 않습니다. revision만 30초/60초 확인하고 변경 시에만 데이터를 받지만 전체 state 조회가 큰 경우 egress 비용/한도에 영향을 줍니다. 쌓이는 업무·이력은 측정 후 페이지 조회로 최적화합니다. 무료 플랜은 무제한 운영 보장이 아닙니다. 유료 API·유료 플랜·AI 기능은 사용하지 않습니다. 결과물 첨부는 아래 비공개 Storage 설정 후 Free 한도 안에서 사용합니다.
+
+## 결과물 이미지·PDF 첨부
+
+`supabase/migrations/202610150001_artifact_storage.sql`을 관리자 SQL Editor에서 검토·적용합니다. `workwith-artifacts`는 비공개 버킷이며 파일당 최대 5MiB, JPG·PNG·WebP·PDF만 허용합니다. 파일을 base64로 DB나 Git에 저장하지 않습니다. 결과물 레코드에는 버킷·경로·원래 이름·MIME·크기만 보관합니다.
+
+등록된 팀원은 공유 결과물을 읽고 삭제할 수 있으며, 새 파일은 본인 Auth UUID 폴더에만 업로드합니다. 익명·미등록 계정은 접근할 수 없습니다. 기존 객체 덮어쓰기는 허용하지 않으며 교체 시 새 경로를 사용합니다. 다운로드는 JWT를 헤더로 보낸 인증 요청으로 처리하고 공개 URL이나 장기 서명 URL을 만들지 않습니다.
+
+파일 저장 후 결과물 레코드 저장에 실패하면 새 업로드를 정리합니다. 교체·결과물 삭제·프로젝트 삭제 후 관련 파일 정리 실패는 화면에 안내하므로 운영자가 Storage에서 미참조 파일을 확인해야 합니다. DB와 Storage 간 분산 트랜잭션은 제공하지 않습니다. 실제 회사 파일을 정리할 때는 결과물 레코드의 참조 여부를 확인하세요.
+
+Storage Free 총 1GB와 전송량 한도는 별도입니다. 초과·권한·설정 오류는 업로드 실패로 표시하며 유료 플랜 전환이나 결제 설정을 실행하지 않습니다. 업로드를 사용하려면 수정된 workspace Edge Function도 배포해야 합니다. 함수 파일은 기존 build-functions.mjs로 생성합니다.
 
 ## 검증 필요 항목
 

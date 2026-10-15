@@ -1,4 +1,5 @@
 export const USERS = [{id:'ceo',name:'대표님',initial:'대'},{id:'sj',name:'정승재',initial:'재'},{id:'sy',name:'양승연',initial:'연'},{id:'jh',name:'최재희',initial:'희'}];
+import {validAttachment} from './attachments.js';
 export const STATUSES=['예정','진행 중','검토 요청','완료'];
 export const taskStatus=status=>status==='보류 중'?'검토 요청':status;
 export const statusLabel=status=>taskStatus(status)==='검토 요청'?'보류 중':status;
@@ -39,7 +40,7 @@ export function validate(state){
  const visited=new Set(),pending=new Set();
  function visit(id){required(!pending.has(id),'업무 의존 관계에 순환이 있습니다.');if(visited.has(id))return;pending.add(id);for(const dep of state.tasks.find(t=>t.id===id).dependencies)visit(dep);pending.delete(id);visited.add(id);}
  state.tasks.forEach(t=>visit(t.id));
- for(const a of state.artifacts)required(project(a.projectId)&&str(a.title,200)&&a.title.trim()&&str(a.url,2000)&&safeURL(a.url),'결과물 링크 오류');
+ for(const a of state.artifacts)required(project(a.projectId)&&str(a.title,200)&&a.title.trim()&&str(a.url,2000)&&(!a.url||safeURL(a.url))&&(!a.attachment||validAttachment(a.attachment))&&(a.url||a.attachment),'결과물 링크 또는 첨부 파일 오류');
  for(const m of state.minutes)required((!m.projectId||project(m.projectId))&&(!m.projectIds||Array.isArray(m.projectIds)&&new Set(m.projectIds).size===m.projectIds.length&&m.projectIds.every(project))&&str(m.title,200)&&m.title.trim()&&str(m.body,50000)&&userOK(m.author)&&m.author&&str(m.at,100),'회의록 형식 오류');
  for(const h of state.history)required(str(h.at,100)&&userOK(h.actor)&&h.actor&&str(h.message,1000)&&['shared','private'].includes(h.visibility)&&userOK(h.owner)&&str(h.projectId,100),'이력 형식 오류');
  return state;
