@@ -153,8 +153,8 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
  await t.test('task editing uploads private files, preserves on ordinary edit, cleans conflicts and removes attachments',async()=>{
   const file=new File(['%PDF-1.7'],'task.pdf',{type:'application/pdf'}),attachment={bucket:'workwith-task-files',path:'00000000-0000-4000-8000-000000000001/t/00000000-0000-4000-8000-000000000005.pdf',name:file.name,type:file.type,size:file.size};const removed=[];
   store.uploadAttachment=async(f,options)=>{assert.equal(f,file);assert.equal(options.taskId,'t');return attachment;};store.removeAttachment=async a=>removed.push(a.path);
-  const old=await item('tasks','t');await click('data-action','task','t');assert.match(nodes.get('#editor').innerHTML,/어떤 일을 진행하나요/);assert.match(nodes.get('#editor').innerHTML,/<details/);assert.match(nodes.get('#editor').innerHTML,/type="radio" name="status"/);
-  await submit('task',{...old,file},'t');assert.deepEqual((await item('tasks','t')).attachment,attachment);assert.equal((await item('tasks','t')).visibility,'private');
+  const old=await item('tasks','t');await click('data-action','task','t');assert.match(nodes.get('#editor').innerHTML,/name="note"/);assert.match(nodes.get('#editor').innerHTML,/<details/);assert.match(nodes.get('#editor').innerHTML,/type="radio" name="status"/);
+  await submit('task',{...old,note:'제목 아래에서 작성한 설명',file},'t');assert.equal((await item('tasks','t')).note,'제목 아래에서 작성한 설명');assert.deepEqual((await item('tasks','t')).attachment,attachment);assert.equal((await item('tasks','t')).visibility,'private');
   await click('data-nav','archive');assert.match(nodes.get('#app').innerHTML,/task-preview/);
   const attached=await item('tasks','t');await click('data-action','task','t');await submit('task',{...attached,title:'파일 유지'},'t');assert.deepEqual((await item('tasks','t')).attachment,attachment);assert.equal(removed.length,0);
   const conflictAttachment={...attachment,path:attachment.path.replace('000000000005.pdf','000000000006.pdf')};store.uploadAttachment=async()=>conflictAttachment;
