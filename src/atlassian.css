@@ -115,3 +115,9 @@ dialog{width:680px;border:1px solid #dfe1e6;border-radius:8px;padding:24px;color
 #minutes-form { display: grid; gap: 16px; }
 #minutes-form label { display: grid; gap: 8px; }
 #minutes-form button { justify-self: start; }
+.minutes-date-toolbar { display: flex; align-items: end; gap: 12px; margin: 16px 0; }
+.minutes-date-toolbar label { display: grid; gap: 6px; }
+.minutes-date-group { margin-top: 24px; }
+.minutes-date-group h4 { display: flex; gap: 8px; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #dfe1e6; }
+.minute-projects { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+@media (max-width: 580px) { .minutes-date-toolbar { flex-wrap: wrap; } }

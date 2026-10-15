@@ -87,6 +87,29 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   const before=await pg.repository.load();await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'원문 보관 검증',body,projectId:''}}});const after=await pg.repository.load();assert.equal(after.state.tasks.length,before.state.tasks.length);assert.equal(after.state.projects.length,before.state.projects.length);const m=after.state.minutes.find(m=>m.title==='원문 보관 검증');assert.equal(m.body,body);assert.equal(m.projectId,'');assert.ok(!nodes.get('#app').innerHTML.includes('id="draft-form"'));assert.match(nodes.get('#app').innerHTML,/회의록 아카이브/);for(const text of ['업무 초안 만들기','프로젝트 · 업무 검토','추천 프로젝트별 생성','프로젝트/업무 등록'])assert.ok(!nodes.get('#app').innerHTML.includes(text));
   await click('data-nav','dashboard');await click('data-nav','minutes');assert.match(nodes.get('#app').innerHTML,/원문 보관 검증/);
  });
+ await t.test('kanban and my board use only the top new task button',async()=>{
+  for(const view of ['collab','mine']){await click('data-nav',view);const html=nodes.get('#app').innerHTML;assert.match(html,/새 업무/);assert.ok(!html.includes('add-card'));assert.ok(!html.includes('+ 업무 추가'));}
+ });
+ await t.test('meeting dates persist, filter archives and link existing projects without generating tasks',async()=>{
+  await click('data-nav','minutes');assert.match(nodes.get('#app').innerHTML,/회의록 등록/);assert.ok(!nodes.get('#app').innerHTML.includes('회의록 입력'));
+  const before=await pg.repository.load();
+  const create=values=>listeners.submit({preventDefault(){},target:{id:'minutes-form',values}});
+  await create({title:'날짜 A 회의',meetingDate:'2026-10-12',projectId:'',body:'원문 A'});
+  await create({title:'날짜 B 회의',meetingDate:'2026-10-13',projectId:'p',body:'원문 B'});
+  let snapshot=await pg.repository.load();assert.equal(snapshot.state.projects.length,before.state.projects.length);assert.equal(snapshot.state.tasks.length,before.state.tasks.length);
+  const a=snapshot.state.minutes.find(m=>m.title==='날짜 A 회의'),b=snapshot.state.minutes.find(m=>m.title==='날짜 B 회의');assert.equal(a.meetingDate,'2026-10-12');assert.equal(b.projectId,'p');
+  await listeners.change({target:{id:'minutes-date-filter',value:'2026-10-12'}});let html=nodes.get('#app').innerHTML;assert.match(html,/날짜 A 회의/);assert.ok(!html.includes('날짜 B 회의'));
+  await click('data-action','minutes-edit',a.id);await submit('minutes',{title:a.title,body:a.body,meetingDate:a.meetingDate,projectId:'p'},a.id);
+  const linked=await item('minutes',a.id);assert.equal(linked.projectId,'p');assert.equal(linked.author,a.author);assert.equal(linked.at,a.at);
+  await click('data-action','project-open','p');assert.match(nodes.get('#app').innerHTML,/날짜 A 회의/);assert.match(nodes.get('#app').innerHTML,/날짜 B 회의/);
+  await click('data-nav','minutes');await click('data-action','minutes-filter-reset');assert.match(nodes.get('#app').innerHTML,/날짜 B 회의/);
+  snapshot=await pg.repository.load();await create({title:'잘못된 날짜',meetingDate:'2026-02-30',projectId:'p',body:'검증'});assert.equal((await pg.repository.load()).state.minutes.length,snapshot.state.minutes.length);assert.match(nodes.get('#login-error').textContent,/회의 날짜/);
+ });
+ await t.test('legacy meeting archive dates use Korea registration date and keep original data',async()=>{
+  const snapshot=await pg.repository.load();const legacy={id:'legacy-meeting-date',title:'기존 날짜 회의록',body:'기존 원문',projectId:'',author:'sj',at:'2026-10-14T16:00:00Z'};
+  await mutate(pg.repository,{action:{type:'minutes.save',value:legacy},revision:snapshot.state.revision,baseVersion:null},'sj');
+  await [...timers.values()].find(t=>t.delay===30000).fn();await click('data-nav','minutes');await listeners.change({target:{id:'minutes-date-filter',value:'2026-10-15'}});assert.match(nodes.get('#app').innerHTML,/기존 날짜 회의록/);assert.match(nodes.get('#app').innerHTML,/등록일 기준/);assert.deepEqual(await item('minutes',legacy.id),legacy);
+ });
  await t.test('settings labels reflect Supabase and no demo data controls',async()=>{await click('data-nav','settings');const html=nodes.get('#app').innerHTML;assert.match(html,/Supabase PostgreSQL 공유/);for(const label of ['전체 시연 데이터 백업','시연 데이터 준비','JSON 내보내기','예시 데이터 불러오기'])assert.ok(!html.includes(label));});
  await t.test('settings password form validates confirmation and clears credentials after successful change',async()=>{
   let called=0;store.changePassword=async(current,next)=>{called++;assert.equal(current,'temporary-test');assert.equal(next,'replacement-test');};
