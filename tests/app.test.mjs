@@ -54,7 +54,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
  });
  await t.test('shared task collaborator persists and is included in my board, calendar and member filter',async()=>{
   await click('data-action','task');await submit('task',{title:'협업 검증',visibility:'shared',assignee:'sy',collaborator:'sj',projectId:'p',status:'예정',priority:'보통',start:'',due:'',hours:'1',kpiId:'',url:'',note:''},'t-collab');assert.deepEqual((await item('tasks','t-collab')).collaborators,['sj']);
-  await click('data-nav','mine');assert.match(nodes.get('#app').innerHTML,/협업 검증/);assert.match(nodes.get('#app').innerHTML,/task-project-label/);assert.match(nodes.get('#app').innerHTML,/person-chip/);
+  await click('data-nav','mine');assert.match(nodes.get('#app').innerHTML,/협업 검증/);assert.match(nodes.get('#app').innerHTML,/project-chip/);assert.match(nodes.get('#app').innerHTML,/person-chip/);
   await click('data-nav','calendar');assert.match(nodes.get('#app').innerHTML,/협업 검증/);await click('data-nav','collab');await listeners.change({target:{id:'assignee-filter',value:'sj',dataset:{}}});assert.match(nodes.get('#app').innerHTML,/협업 검증/);
   await click('data-action','task','t-collab');assert.match(nodes.get('#editor').innerHTML,/name="collaborator" value="sj" checked/);
   await click('data-action','close');
@@ -109,6 +109,21 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   const snapshot=await pg.repository.load();const legacy={id:'legacy-meeting-date',title:'기존 날짜 회의록',body:'기존 원문',projectId:'',author:'sj',at:'2026-10-14T16:00:00Z'};
   await mutate(pg.repository,{action:{type:'minutes.save',value:legacy},revision:snapshot.state.revision,baseVersion:null},'sj');
   await [...timers.values()].find(t=>t.delay===30000).fn();await click('data-nav','minutes');await listeners.change({target:{id:'minutes-date-filter',value:'2026-10-15'}});assert.match(nodes.get('#app').innerHTML,/기존 날짜 회의록/);assert.match(nodes.get('#app').innerHTML,/등록일 기준/);assert.deepEqual(await item('minutes',legacy.id),legacy);
+ });
+ await t.test('card body opens editor; state select clicks stay on the board; project chip follows title',async()=>{
+  await click('data-nav','collab');const html=nodes.get('#app').innerHTML;assert.ok(html.indexOf('class="task-title"')<html.indexOf('class="project-chip'));
+  const card={dataset:{action:'task',id:'t-collab'}};
+  await listeners.click({target:{closest:s=>s==='[data-task-card]'||s==='[data-action]'?card:null}});assert.equal(nodes.get('#editor').open,true);await click('data-action','close');
+  await listeners.click({target:{closest:s=>s==='[data-task-card]'?card:s==='select,input,textarea,label,a'?{}:null}});assert.equal(nodes.get('#editor').open,false);
+ });
+ await t.test('file-only artifacts save, keep attachment on title edit, and clean failed new upload',async()=>{
+  const path='00000000-0000-4000-8000-000000000001/00000000-0000-4000-8000-000000000002.pdf';const file=new File(['%PDF-1.7'],'test.pdf',{type:'application/pdf'}),attachment={bucket:'workwith-artifacts',path,name:file.name,type:file.type,size:file.size};let removed=[];
+  store.uploadAttachment=async()=>attachment;store.removeAttachment=async a=>removed.push(a.path);
+  await click('data-action','artifact','p');await submit('artifact',{title:'PDF 결과',projectId:'p',url:'',file},'file-result');assert.deepEqual((await item('artifacts','file-result')).attachment,attachment);
+  await click('data-action','artifact-edit','file-result');await submit('artifact',{title:'PDF 결과 수정',projectId:'p',url:''},'file-result');assert.equal((await item('artifacts','file-result')).attachment.path,path);assert.equal(removed.length,0);
+  await click('data-nav','archive');assert.match(nodes.get('#app').innerHTML,/test.pdf/);assert.match(nodes.get('#app').innerHTML,/artifact-download/);
+  const failedPath=path.replace('000000000002.pdf','000000000003.pdf');store.uploadAttachment=async()=>({...attachment,path:failedPath});
+  await click('data-action','artifact','p');await submit('artifact',{title:'잘못된 프로젝트',projectId:'missing',url:'',file},'failed-result');assert.ok(!await item('artifacts','failed-result'));assert.deepEqual(removed,[failedPath]);assert.equal((await item('artifacts','file-result')).attachment.path,path);assert.equal(nodes.get('#editor').open,true);await click('data-action','close');
  });
  await t.test('settings labels reflect Supabase and no demo data controls',async()=>{await click('data-nav','settings');const html=nodes.get('#app').innerHTML;assert.match(html,/Supabase PostgreSQL 공유/);for(const label of ['전체 시연 데이터 백업','시연 데이터 준비','JSON 내보내기','예시 데이터 불러오기'])assert.ok(!html.includes(label));});
  await t.test('settings password form validates confirmation and clears credentials after successful change',async()=>{
