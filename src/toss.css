@@ -305,3 +305,11 @@ footer { font-size:12px; }
 .meeting-task-list small { display:block; color:var(--t-secondary); font-size:13px; margin-top:4px; }
 .task-minutes-view { padding:24px; overflow-wrap:anywhere; }
 .task-minutes-view .section-head { gap:16px; }
+
+.meeting-intake { margin:24px 0; padding:24px; background:#f9fafb; border-radius:16px; }
+.meeting-intake h3 span { color:var(--t-accent); }
+.meeting-drafts { display:grid; gap:16px; margin:20px 0; }
+.meeting-draft { background:#fff; padding:20px; border:1px solid #e5e8eb; border-radius:12px; display:grid; gap:12px; }
+.meeting-draft details { font-size:14px; }.meeting-draft summary { cursor:pointer; color:var(--t-secondary); }
+.meeting-draft .prewrap { padding:12px; background:#f9fafb; border-radius:8px; }
+@media(max-width:600px){.meeting-intake{padding:16px;}.meeting-draft{padding:16px;}}
