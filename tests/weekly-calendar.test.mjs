@@ -20,7 +20,7 @@ test('this and next week include overlapping schedules and own collaboration wit
  const task=(id,fields={})=>({id,title:id,visibility:'shared',owner:'sj',assignee:'jh',collaborators:[],start:'',due:'',status:'예정',priority:'보통',...fields});
  const state={tasks:[task('span',{start:'2026-10-01',due:'2026-10-25'}),task('start',{start:'2026-10-14'}),task('due',{due:'2026-10-20'}),task('private',{visibility:'private',owner:'sy',assignee:'sy',due:'2026-10-16'}),task('collab',{assignee:'sy',collaborators:['jh'],due:'2026-10-19'}),task('other',{assignee:'sj',due:'2026-10-16'}),task('done',{status:'완료',due:'2026-10-16'}),task('late',{due:'2026-10-10'}),task('undated')]};
  const before=structuredClone(state),result=weeklyCalendar(state,'jh','2026-10-16','2026-10-16','jh');
- assert.deepEqual(result.current.tasks.map(t=>t.id),['span','start']);
+ assert.deepEqual(result.current.tasks.map(t=>t.id),['done','span','start']);
  assert.deepEqual(result.next.tasks.map(t=>t.id),['collab','due','span']);
  assert.deepEqual(result.overdue.map(t=>t.id),['late']);assert.deepEqual(result.unscheduled.map(t=>t.id),['undated']);
  assert.deepEqual(state,before);
@@ -32,4 +32,14 @@ test('team calendar includes other shared schedules, filters equal participants 
  assert.deepEqual(new Set(weeklyCalendar(state,'jh','2026-10-16').current.tasks.map(t=>t.id)),new Set(['shared','mine','joint']));
  assert.deepEqual(new Set(weeklyCalendar(state,'jh','2026-10-16','2026-10-16','sy').current.tasks.map(t=>t.id)),new Set(['shared','joint']));
  const moved={tasks:state.tasks.map(t=>t.id==='shared'?{...t,start:'2026-10-13'}:t)};assert.deepEqual(weeklyCalendar(state,'jh','2026-10-16').current.tasks.map(t=>t.id),weeklyCalendar(moved,'jh','2026-10-16').current.tasks.map(t=>t.id));
+});
+
+test('completed work stays on its dates in past weeks, respects visibility and is never overdue',()=>{
+ const base={title:'완료 업무',visibility:'shared',owner:'sy',assignee:'sy',collaborators:['jh'],status:'완료',priority:'높음',start:'2026-10-05',due:'2026-10-07',completedAt:'2026-10-07'};
+ const state={tasks:[{...base,id:'done'},{...base,id:'hidden',visibility:'private'},{...base,id:'mine',visibility:'private',owner:'jh',assignee:'jh'}]},before=structuredClone(state);
+ const week=weeklyCalendar(state,'jh','2026-10-06','2026-10-16');
+ assert.deepEqual(new Set(week.current.tasks.map(t=>t.id)),new Set(['done','mine']));
+ assert.equal(weeklyCalendar(state,'jh','2026-10-16','2026-10-16').overdue.length,0);
+ assert.deepEqual(weeklyCalendar(state,'jh','2026-10-06','2026-10-16','sy').current.tasks.map(t=>t.id),['done']);
+ assert.deepEqual(state,before);
 });
