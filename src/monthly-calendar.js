@@ -1,4 +1,4 @@
-import {shiftDay,weekRange} from './weekly-calendar.js';
+import {shiftDay,weekRange,calendarOrder} from './weekly-calendar.js';
 import {adjustSchedule,daysBetween,scheduleReason} from './schedule-bars.js';
 import {dropDate} from './unscheduled-drag.js';
 
@@ -7,7 +7,7 @@ export function monthWeeks(month,tasks){
  const [year,m]=month.split('-').map(Number),last=new Date(Date.UTC(year,m,0)).toISOString().slice(0,10),weeks=[];
  for(let start=weekRange(month+'-01').start;start<=last;start=shiftDay(start,7)){
   const end=shiftDay(start,6);
-  weeks.push({start,end,tasks:tasks.filter(t=>{const a=t.start||t.due,b=t.due||t.start;return a&&b&&a<=b&&a<=end&&b>=start;}).sort((a,b)=>a.title.localeCompare(b.title,'ko')||a.id.localeCompare(b.id))});
+  weeks.push({start,end,tasks:tasks.filter(t=>{const a=t.start||t.due,b=t.due||t.start;return a&&b&&a<=b&&a<=end&&b>=start;}).sort(calendarOrder)});
  }
  return weeks;
 }
