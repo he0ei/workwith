@@ -214,12 +214,16 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   const values={visibility:'shared',assignee:'sj',projectId:'gowoori',status:'예정',priority:'보통',hours:'0',kpiId:'',url:'',note:''};
   await click('data-action','task');await submit('task',{...values,title:'이번 주 일정 확인',start:range.start,due:range.end},'weekly-this');
   await click('data-action','task');await submit('task',{...values,title:'다음 주 일정 확인',start:next,due:shiftDay(next,6)},'weekly-next');
-  await click('data-nav','calendar');assert.match(nodes.get('#app').innerHTML,/이번 주 할 일/);assert.equal((nodes.get('#app').innerHTML.match(/class="week-days"/g)||[]).length,2);assert.match(nodes.get('#app').innerHTML,/schedule-label/);assert.match(nodes.get('#app').innerHTML,/다음 주 할 일/);assert.match(nodes.get('#app').innerHTML,/weekly-this/);assert.match(nodes.get('#app').innerHTML,/weekly-next/);
+  await click('data-nav','calendar');assert.match(nodes.get('#app').innerHTML,/이번 주 할 일/);assert.equal((nodes.get('#app').innerHTML.match(/class="week-days"/g)||[]).length,2);assert.match(nodes.get('#app').innerHTML,/data-schedule-bar/);assert.match(nodes.get('#app').innerHTML,/다음 주 할 일/);assert.match(nodes.get('#app').innerHTML,/weekly-this/);assert.match(nodes.get('#app').innerHTML,/weekly-next/);
   await click('data-action','calendar-month');assert.match(nodes.get('#app').innerHTML,/class="calendar"/);
   await click('data-action','calendar-week');await click('data-action','week-next');assert.match(nodes.get('#app').innerHTML,/선택한 주 할 일/);await click('data-action','week-today');
   await click('data-action','task','weekly-this');assert.equal(nodes.get('#editor').open,true);
   await submit('task',{...values,title:'이번 주 일정 확인',start:next,due:shiftDay(next,6),reason:'다음 주로 조정'},'weekly-this');
   assert.match(nodes.get('#app').innerHTML,/다음 주 할 일/);assert.equal((await item('tasks','weekly-this')).start,next);
+  const before=await item('tasks','weekly-this');
+  await listeners.keydown({key:'ArrowRight',preventDefault(){},target:{closest:selector=>selector==='[data-schedule-bar]'?{dataset:{scheduleBar:'weekly-this'}}:null}});
+  const after=await item('tasks','weekly-this');assert.equal(after.start,shiftDay(before.start,1));assert.equal(after.due,shiftDay(before.due,1));assert.equal(after.visibility,before.visibility);assert.equal(after.status,before.status);assert.equal(after.projectId,before.projectId);assert.deepEqual(after.collaborators,before.collaborators);
+
  });
  await pg.close();
 });
