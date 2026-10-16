@@ -5,15 +5,14 @@ export function shiftDay(date,days){
 }
 export function weekRange(date=today()){
  if(!date||!dateOK(date))throw Error('주간 일정 날짜 오류');
- const day=new Date(date+'T12:00:00Z').getUTCDay()||7,start=shiftDay(date,1-day);
+ const day=new Date(date+'T12:00:00Z').getUTCDay(),start=shiftDay(date,-day);
  return {start,end:shiftDay(start,6)};
 }
 export function weekDays(range,now=today()){
  return Array.from({length:7},(_,index)=>{
   const date=shiftDay(range.start,index);
-  const entries=range.tasks.filter(t=>(t.start||t.due)<=date&&(t.due||t.start)>=date).sort(priorityOrder).map(task=>({task,labels:[...(task.start===date?['계획']:[]),...(task.due===date?['마감']:[]) ]}));
-  for(const entry of entries)if(!entry.labels.length)entry.labels.push('진행 기간');
-  return {date,weekday:['월','화','수','목','금','토','일'][index],isToday:date===now,isWeekend:index>=5,entries};
+  const entries=range.tasks.filter(t=>t.start===date||t.due===date).sort(priorityOrder).map(task=>({task,labels:[...(task.start===date?['시작']:[]),...(task.due===date?['마감']:[]) ]}));
+  return {date,weekday:['일','월','화','수','목','금','토'][index],isToday:date===now,isWeekend:index===0||index===6,entries};
  });
 }
 export function weeklyCalendar(state,user,anchor=today(),now=today()){
