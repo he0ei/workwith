@@ -202,6 +202,13 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await submit('task',{...values,projectId:'gowoori'},'heading-task');const saved=await item('tasks','heading-task');
   assert.equal(saved.title,'MYMAM 상세페이지 기획');assert.equal(saved.projectId,'gowoori');assert.equal(saved.note,values.note);
  });
+ await t.test('save blocks invalid dates and missing reason before writing, preserving the editor',async()=>{
+  const old=await item('tasks','t-collab');await click('data-action','task','t-collab');
+  await submit('task',{...old,start:'2026-10-20',due:'2026-10-19',hours:'1'},old.id);
+  assert.match(nodes.get('#form-error').textContent,/마감일은 시작일/);assert.equal(nodes.get('#editor').open,true);assert.equal((await item('tasks',old.id)).start,old.start);
+  await submit('task',{...old,start:'2026-10-20',due:'2026-10-21',hours:'1'},old.id);
+  assert.match(nodes.get('#form-error').textContent,/일정 변경 시 사유를 입력해야 합니다/);assert.equal((await item('tasks',old.id)).due,old.due);
+ });
  await t.test('weekly calendar automatically shows this and next week and preserves the monthly view',async()=>{
   const range=weekRange(today()),next=shiftDay(range.start,7);
   const values={visibility:'shared',assignee:'sj',projectId:'gowoori',status:'예정',priority:'보통',hours:'0',kpiId:'',url:'',note:''};

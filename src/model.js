@@ -54,7 +54,7 @@ export function validate(state){
 }
 export function kpiProgress(k){if(k.method==='manual')return null;if(k.method==='increase')return k.target>0?Math.min(100,100*k.current/k.target):null;return k.current<=k.target?100:k.current>0?100*k.target/k.current:null;}
 export function filterTasks(tasks,filter,date=today()){
- const d=new Date(`${date}T00:00:00Z`);const day=d.getUTCDay()||7;d.setUTCDate(d.getUTCDate()-day+1);const start=d.toISOString().slice(0,10);d.setUTCDate(d.getUTCDate()+6);const end=d.toISOString().slice(0,10);
+ const d=new Date(`${date}T00:00:00Z`);const day=d.getUTCDay();d.setUTCDate(d.getUTCDate()-day);const start=d.toISOString().slice(0,10);d.setUTCDate(d.getUTCDate()+6);const end=d.toISOString().slice(0,10);
  return tasks.filter(t=>filter==='all'||(filter==='done'?t.status==='완료':t.status!=='완료'&&(filter==='today'?(t.start===date||t.due===date):filter==='late'?t.due&&t.due<date:filter==='week'?((t.start>=start&&t.start<=end)||(t.due>=start&&t.due<=end)):true)));
 }
 function log(s,actor,message,entity={}){s.history.push({id:uid(),at:new Date().toISOString(),actor,message,visibility:entity.visibility||'shared',owner:entity.owner||'',projectId:entity.projectId||entity.id&&s.projects.some(p=>p.id===entity.id)&&entity.id||''});}
