@@ -173,7 +173,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'프로젝트 업무 회의',body,meetingDate:'2026-10-15',projectId:'rank-p0',task:['rank-t0','meeting-task2','rank-t1','t']}}});
   const snapshot=await pg.repository.load(),m=snapshot.state.minutes.find(m=>m.title==='프로젝트 업무 회의');
   assert.deepEqual(m.taskIds,['rank-t0','meeting-task2']);assert.equal(m.body,body);
-  await click('data-action','task','rank-t0');assert.ok(!nodes.get('#editor').innerHTML.includes('name="minute"'));assert.ok(!nodes.get('#editor').innerHTML.includes('task-section-minutes'));
+  await click('data-action','task','rank-t0');assert.ok(!nodes.get('#editor').innerHTML.includes('name="minute"'));assert.match(nodes.get('#editor').innerHTML,/id="task-section-minutes"/);assert.match(nodes.get('#editor').innerHTML,/role="tab" id="task-tab-minutes"/);
   await submit('task',{...await item('tasks','rank-t0'),note:'업무 수정 후에도 회의 연결 유지'},'rank-t0');
   await click('data-action','task-minutes','rank-t0');const viewer=nodes.get('#editor').innerHTML;assert.match(viewer,/프로젝트 업무 회의/);assert.ok(viewer.includes('&lt;script&gt;'));assert.ok(!viewer.includes('type="checkbox"'));await click('data-action','close');
   await click('data-action','task-minutes','rank-t1');assert.ok(!nodes.get('#editor').innerHTML.includes('프로젝트 업무 회의'));await click('data-action','close');
@@ -284,7 +284,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-action','minutes-edit',record.id);assert.match(nodes.get('#editor').innerHTML,/value="multi-alpha" checked/);assert.match(nodes.get('#editor').innerHTML,/value="multi-beta" checked/);
   await submit('minutes',{...record,meetingProjectSelection:'1',meetingProject:['multi-beta'],task:record.taskIds},record.id);const edited=await item('minutes',record.id);assert.deepEqual(edited.projectIds,['multi-beta']);assert.deepEqual(edited.taskIds,[linked.find(t=>t.projectId==='multi-beta').id]);nodes.delete('#minutes-form');
  });
- await t.test('meeting links hide completed projects, separate completed tasks and preserve historical links',async()=>{
+ await t.test('meeting links separate completed project selection, save explicit selections and preserve historical links',async()=>{
   for(const [id,title] of [['link-open','진행 연결 프로젝트'],['link-closed','완료 연결 프로젝트']]){await click('data-action','project');await submit('project',{title,goal:'',owner:'sj',start:'',due:''},id);}
   for(const [id,title,status,projectId] of [['link-active-task','남은 연결 업무','진행 중','link-open'],['link-done-task','완료 연결 업무','완료','link-open'],['link-old-task','기존 완료 프로젝트 업무','완료','link-closed']]){await click('data-action','task');await submit('task',{title,visibility:'shared',assignee:'sj',projectId,status,priority:'보통',start:'',due:'',hours:'0',kpiId:'',url:'',note:''},id);}
   const create=values=>listeners.submit({preventDefault(){},target:{id:'minutes-form',values}});
@@ -295,16 +295,17 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await create({title:'상태별 연결 기록',meetingDate:today(),projectId:'link-open',task:['link-active-task','link-done-task','link-old-task'],body:'업무 연결을 확인합니다.'});
   const record=(await pg.repository.load()).state.minutes.find(m=>m.title==='상태별 연결 기록');assert.deepEqual(new Set(record.taskIds),new Set(['link-active-task','link-done-task']));
   await click('data-action','minutes-edit',record.id);html=nodes.get('#editor').innerHTML;
-  const active=html.split('data-meeting-task-status="active"')[1].split('</details>')[0],done=html.split('data-meeting-task-status="completed"')[1].split('</details>')[0];
-  assert.match(active,/기존 업무에 연결/);assert.match(active,/name="task" value="link-active-task" checked/);assert.ok(!active.includes('value="link-done-task"'));
-  assert.match(done,/완료된 업무에 연결/);assert.match(done,/name="task" value="link-done-task" checked/);assert.ok(!done.includes('value="link-active-task"'));assert.ok(!html.includes('value="link-old-task"'));
+  const work=html.split('data-completed-projects')[0],closed=html.split('data-completed-projects')[1];
+  assert.match(work,/name="task" value="link-active-task" checked/);assert.match(work,/name="task" value="link-done-task" checked/);assert.ok(!html.includes('value="link-old-task"'));
+  assert.match(closed,/완료된 프로젝트에 연결/);assert.match(closed,/type="checkbox" name="meetingProject" value="link-closed"/);assert.ok(!html.includes('완료된 업무에 연결'));
   await submit('minutes',{...record,meetingProjectSelection:'1',meetingProject:['link-open'],task:['link-active-task','link-done-task']},record.id);assert.deepEqual(new Set((await item('minutes',record.id)).taskIds),new Set(['link-active-task','link-done-task']));
-  await click('data-action','minutes-edit',old.id);html=nodes.get('#editor').innerHTML;assert.match(html,/type="hidden" name="meetingProject" value="link-closed"/);assert.ok(!html.includes('type="checkbox" name="meetingProject" value="link-closed"'));assert.match(html,/기존 연결 유지/);
+  await click('data-action','minutes-edit',old.id);html=nodes.get('#editor').innerHTML;assert.match(html,/type="checkbox" name="meetingProject" value="link-closed" checked/);
   await submit('minutes',{...old,meetingProjectSelection:'1',meetingProject:['link-closed'],task:['link-old-task']},old.id);assert.deepEqual((await item('minutes',old.id)).taskIds,['link-old-task']);await click('data-action','close');
   const sections=new Map(['[data-intake]','[data-meeting-projects]','[data-meeting-tasks]','[data-meeting-date-status]'].map(k=>[k,{innerHTML:'',textContent:''}]));
   const form={id:'minutes-form',values:{title:'완료 사업 후속',meetingDate:today(),body:'프로젝트: 완료 연결 프로젝트\n후속 업무\n- 정승재: 완료 연결 프로젝트 결과 정리하기',meetingProjectSelection:'1'},querySelector:s=>sections.get(s)};nodes.set('#minutes-form',form);
   await listeners.input({target:{name:'body',value:form.values.body,closest:s=>s==='#minutes-form'||s==='form'?form:null}});
   assert.ok(!sections.get('[data-meeting-projects]').innerHTML.includes('value="link-closed"'));assert.ok(!sections.get('[data-intake]').innerHTML.includes('value="link-closed"'));nodes.delete('#minutes-form');
+  await create({title:'완료 프로젝트 신규 연결',meetingDate:today(),meetingProjectSelection:'1',meetingProject:['link-closed'],body:'완료 프로젝트의 사후 회의 기록'});const saved=(await pg.repository.load()).state.minutes.find(m=>m.title==='완료 프로젝트 신규 연결');assert.deepEqual(saved.projectIds,['link-closed']);
  });
  await pg.close();
 });
