@@ -590,3 +590,105 @@ footer { font-size:12px; }
 .meeting-draft>label { margin-bottom:10px; }
 .meeting-project-list .check-label { display:inline-flex; flex-direction:row; align-items:center; gap:6px; }
 .meeting-project-list .check-label input { width:auto; flex:none; margin:0; }
+
+/* Compact workspace: keep readable type while reducing repeated framing. */
+main { padding-top:16px; }
+.page-heading { margin-bottom:20px; }
+.page-heading h1 { font-size:26px; margin-bottom:4px; }
+.page-heading .eyebrow { display:none; }
+.page-heading p { margin-bottom:0; }
+.panel { padding:20px; border-radius:16px; margin-bottom:16px; }
+.stats { gap:12px; margin-bottom:16px; }
+.stat { padding:18px; border-radius:16px; }
+.stat-number { margin:12px 0 6px; }
+.stat .stat-number strong { font-size:34px; }
+.dashboard-overview { gap:16px; }
+.dashboard-overview>.dashboard-projects,.dashboard-overview>.dashboard-week { min-height:0; }
+.section-head { margin-bottom:12px; }
+.task-card { padding:14px; border-radius:12px; }
+.task-heading { margin-bottom:8px; }
+nav button { min-height:42px; padding:9px 12px; border-radius:10px; }
+.workspace { padding:12px; margin-bottom:14px; }
+/* One workbench, two working areas; only the review list scrolls on desktop. */
+main:has(.meeting-workbench) .page-heading p { display:none; }
+.meeting-workbench.panel { padding:0; overflow:hidden; border:1px solid #e5e8eb; }
+#minutes-form { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr); gap:0; }
+.meeting-compose { padding:20px; display:flex; flex-direction:column; min-width:0; }
+.meeting-section-heading,.intake-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:32px; margin-bottom:14px; }
+.meeting-section-heading h3,.intake-heading h3 { margin:0; font-size:16px; font-weight:650; }
+.meeting-section-heading>span { color:#8b95a1; font-size:12px; }
+.meeting-basics { display:grid; grid-template-columns:minmax(0,1fr) 155px; gap:10px; }
+#minutes-form label { gap:5px; font-size:12px; min-width:0; }
+#minutes-form input:not([type=checkbox]),#minutes-form select { width:100%; min-width:0; min-height:36px; padding:7px 9px; border-radius:7px; font-size:14px; background:#f7f8fa; border:1px solid #e5e8eb; }
+#minutes-form .meeting-project-options { margin:14px 0; }
+#minutes-form .meeting-project-options legend { font-size:12px; margin-bottom:6px; }
+#minutes-form .meeting-project-list { gap:5px; max-height:100px; overflow-y:auto; }
+#minutes-form .meeting-project-list .check-label { display:inline-flex; padding:5px 8px; border-radius:6px; font-size:12px; }
+#minutes-form .meeting-body-label { display:flex; flex:1; }
+#minutes-form .meeting-body-label textarea { width:100%; min-height:230px; height:100%; resize:vertical; border:1px solid #e5e8eb; background:#fff; border-radius:8px; padding:12px; font-size:14px; line-height:1.75; }
+#minutes-form [data-meeting-date-status] { margin:5px 0 0; font-size:11px; }
+.meeting-existing { margin-top:12px; font-size:12px; }
+.meeting-existing summary { cursor:pointer; color:#4e5968; }
+.meeting-existing summary>span { color:#8b95a1; margin-left:5px; }
+.meeting-existing .meeting-task-list { max-height:160px; overflow-y:auto; }
+.meeting-review { min-width:0; background:#f8fafc; border-left:1px solid #e5e8eb; }
+.meeting-review .meeting-intake { display:flex; flex-direction:column; margin:0; padding:20px; border-radius:0; height:clamp(420px,calc(100dvh - 290px),700px); background:transparent; }
+#minutes-form .intake-heading .check-label { display:inline-flex; flex-direction:row; align-items:center; font-size:12px; margin:0; }
+.intake-heading h3 span { display:inline-block; color:#1b64da; background:#e8f3ff; border-radius:5px; padding:0 6px; font-size:13px; margin-left:4px; }
+.meeting-review .meeting-drafts { display:block; margin:0; min-height:0; overflow-y:auto; scrollbar-gutter:stable; overscroll-behavior:contain; padding-right:6px; }
+.meeting-review .meeting-draft { padding:12px; gap:8px; margin-bottom:8px; border-radius:8px; box-shadow:none; }
+.draft-title-row { display:flex; align-items:center; gap:8px; min-width:0; }
+#minutes-form .draft-select { display:inline-flex; flex-direction:row; align-items:center; flex:none; gap:5px; margin:0; color:#8b95a1; }
+#minutes-form .draft-title { flex:1; min-width:0; }
+#minutes-form .draft-title input { font-size:14px; font-weight:600; background:transparent; border-color:transparent; padding:4px; min-height:30px; }
+#minutes-form .draft-title input:hover,#minutes-form .draft-title input:focus { border-color:#a7c9f9; background:#fff; }
+.draft-fields { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 130px 74px; gap:8px; }
+#minutes-form .draft-fields label { font-size:11px; color:#6b7684; }
+#minutes-form .draft-fields input,#minutes-form .draft-fields select { font-size:12px; min-height:32px; padding:5px; }
+.meeting-draft .draft-source { font-size:11px; }
+.meeting-draft .draft-source summary { color:#8b95a1; }
+.meeting-draft .prewrap { max-height:140px; overflow:auto; margin-bottom:0; }
+.meeting-draft.is-duplicate { background:#f5f6f8; }
+.intake-note { font-size:11px; color:#8b95a1; margin:10px 0 0; line-height:1.5; }
+.intake-empty { display:flex; flex:1; flex-direction:column; justify-content:center; align-items:center; text-align:center; color:#8b95a1; padding:30px 10px; }
+.intake-empty>svg { width:28px; height:28px; margin-bottom:12px; color:#b0b8c1; }
+.intake-empty strong { font-size:14px; font-weight:500; color:#6b7684; }
+.intake-empty p { font-size:12px; margin:6px 0; }
+.meeting-submit { grid-column:1/-1; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 20px; border-top:1px solid #e5e8eb; background:#fff; }
+.meeting-submit>span { font-size:12px; color:#8b95a1; }
+.meeting-submit .primary { min-height:38px; padding:8px 16px; border-radius:8px; }
+.meeting-archive>summary { cursor:pointer; font-size:15px; font-weight:600; }
+.meeting-archive>summary span { color:#8b95a1; font-size:12px; margin-left:8px; font-weight:400; }
+.meeting-archive .minutes-date-toolbar { margin-top:16px; }
+#minutes-form [aria-invalid=true] { border:2px solid #d92d20!important; background:#fffafa!important; }
+@media(max-width:1200px) { .draft-fields { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }.meeting-section-heading>span { display:none; } }
+@media(max-width:900px) {
+ #minutes-form { grid-template-columns:minmax(0,1fr); }
+ .meeting-compose { padding:16px; }
+ .meeting-review { border-left:0; border-top:1px solid #e5e8eb; }
+ .meeting-review .meeting-intake { height:auto; max-height:none; padding:16px; }
+ .meeting-review .meeting-drafts { max-height:540px; }
+ .meeting-submit { position:sticky; bottom:0; padding:12px 16px; }
+ #minutes-form .meeting-body-label textarea { min-height:180px; }
+}
+@media(max-width:580px) {
+ .page-heading h1 { font-size:23px; }.panel { padding:16px; }
+ .meeting-basics { grid-template-columns:minmax(0,1fr); }
+ #minutes-form input:not([type=checkbox]),#minutes-form select,#minutes-form .draft-fields input,#minutes-form .draft-fields select { font-size:16px; }
+ .meeting-submit>span { display:none; }.meeting-submit .primary { width:100%; }
+ .meeting-review .meeting-drafts { padding-right:2px; }
+}
+/* Remove inherited disclosure boxes inside the workbench. */
+.meeting-workbench details { padding:0; border:0; border-radius:0; background:transparent; }
+.meeting-workbench details summary { padding:0; font-weight:400; }
+#minutes-form .meeting-body-label textarea { min-height:180px; height:180px; }
+.meeting-workbench .meeting-existing { margin-top:10px; }
+.meeting-review .meeting-draft { padding:10px 12px; }
+.meeting-review .draft-source { line-height:1.4; }
+.meeting-archive.panel { padding:14px 20px; }
+main:has(.meeting-workbench) footer { margin-top:16px; padding-top:12px; }
+/* Review tasks as rows instead of nested cards. */
+.meeting-review .meeting-draft { border:0; border-bottom:1px solid #e5e8eb; background:transparent; border-radius:0; margin-bottom:0; padding:10px 0; }
+.meeting-review .meeting-draft.is-duplicate { opacity:.7; }
+#minutes-form .draft-fields input,#minutes-form .draft-fields select { background:#fff; border-color:#edf0f3; }
+.meeting-review .meeting-draft:has(input[name=draft]:checked) .draft-title input { color:#191f28; }
