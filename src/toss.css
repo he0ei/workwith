@@ -459,18 +459,18 @@ footer { font-size:12px; }
 @media(max-width:1100px) { .team-calendar-layout { grid-template-columns:minmax(0,1fr); }.team-calendar-layout .planning-list { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); } }
 @media(max-width:580px) { .team-calendar-layout .planning-list { grid-template-columns:minmax(0,1fr); }.schedule-feedback { max-width:92vw; white-space:normal; }.calendar-viewbar select { min-width:110px; } }
 @media(prefers-reduced-motion:reduce) { .schedule-bar { transition:none; } }
-/* Presence-style status markers use the task's existing state. */
+/* Muted status dot and an always-visible label. */
 .task-card-footer { display:flex; align-items:center; gap:10px; margin-top:12px; }
 .task-card-footer .status-control { flex:1; min-width:0; width:auto; margin:0; }
-.task-status-indicator { --status-dot-color:#6f8fb7; display:inline-flex; align-items:center; justify-content:center; position:relative; flex:0 0 20px; width:20px; height:20px; border-radius:50%; cursor:default; }
-.task-status-indicator::after { content:''; width:10px; height:10px; border-radius:50%; background:var(--status-dot-color); box-shadow:0 0 0 2px #fff; }
-.status-dot-1 { --status-dot-color:#17a56b; }.status-dot-2 { --status-dot-color:#d18c16; }.status-dot-3 { --status-dot-color:#738398; }
-.task-status-indicator svg { position:absolute; width:10px; height:10px; z-index:1; fill:none; stroke:white; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }
-.task-status-indicator::before { content:attr(data-status-label); position:absolute; right:0; bottom:25px; padding:5px 9px; border-radius:7px; background:#253858; color:white; font-size:12px; font-weight:500; white-space:nowrap; opacity:0; visibility:hidden; pointer-events:none; z-index:10; }
-.task-status-indicator:hover::before,.task-status-indicator:focus-visible::before { opacity:1; visibility:visible; }
-.task-status-indicator:focus-visible { outline:2px solid #3182f6; outline-offset:2px; }
-.schedule-bar>.task-status-indicator { position:absolute; right:20px; bottom:0; }
-.schedule-bar .bar-project { padding-right:14px; }
-.planning-card { position:relative; padding-right:28px; }
-.planning-card>.task-status-indicator { position:absolute; right:8px; bottom:8px; }
-.column .dot-0 { background:#6f8fb7; }.column .dot-1 { background:#17a56b; }.column .dot-2 { background:#d18c16; }.column .dot-3 { background:#738398; }
+.task-status-indicator { --status-dot-color:#8a9bad; display:inline-flex; align-items:center; gap:5px; position:relative; flex:0 0 auto; height:20px; color:#526170; white-space:nowrap; cursor:default; }
+.status-mark { display:inline-flex; align-items:center; justify-content:center; position:relative; flex:0 0 9px; width:9px; height:9px; border:0; outline:0; border-radius:50%; background:var(--status-dot-color); box-shadow:none; }
+.status-dot-1 { --status-dot-color:#7d9b89; }.status-dot-2 { --status-dot-color:#b09c78; }.status-dot-3 { --status-dot-color:#929ba6; }
+.status-mark svg { position:absolute; width:9px; height:9px; fill:none; stroke:white; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }
+.status-text { font-size:12px; line-height:20px; font-weight:500; }
+.schedule-bar { height:68px; }.schedule-row { min-height:80px; }
+.schedule-bar .bar-body { justify-content:flex-start; padding-top:4px; }
+.schedule-bar>.task-status-indicator { position:absolute; right:20px; bottom:2px; }
+.schedule-bar .bar-project { padding-right:0; }
+.planning-card { position:relative; padding-right:14px; padding-bottom:30px; }
+.planning-card>.task-status-indicator { position:absolute; right:12px; bottom:5px; }
+.column .dot-0 { background:#8a9bad; }.column .dot-1 { background:#7d9b89; }.column .dot-2 { background:#b09c78; }.column .dot-3 { background:#929ba6; }
