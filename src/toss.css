@@ -505,3 +505,48 @@ footer { font-size:12px; }
 .bar-meta .task-status-indicator { gap:3px; }
 .bar-meta .status-text { font-size:11px; }
 .bar-meta .status-mark { width:7px; height:7px; flex-basis:7px; }
+
+/* Compact calendar rows with lightweight titles and equal participant avatars. */
+.schedule-bar { height:38px; border-radius:7px; margin:3px 4px; }
+.schedule-row,.month-week .schedule-row { min-height:44px; }
+.schedule-bar .bar-body { padding:0 2px; }
+.schedule-bar .bar-body strong { font-size:13px; font-weight:500; line-height:18px; }
+.bar-meta { height:16px; line-height:16px; }
+.schedule-bar .bar-project { font-size:11px; font-weight:400; line-height:16px; }
+.calendar-status-people { display:inline-flex; align-items:center; flex:0 0 auto; gap:4px; height:16px; white-space:nowrap; }
+.calendar-status-people .task-status-indicator { height:16px; gap:3px; }
+.calendar-status-people .status-text { font-size:10px; font-weight:400; line-height:16px; }
+.calendar-status-people .status-mark { width:6px; height:6px; flex-basis:6px; }
+.calendar-meta-divider { color:#b0b8c1; font-size:10px; font-weight:400; }
+.calendar-avatars { display:inline-flex; align-items:center; gap:2px; }
+.calendar-avatar { display:inline-flex; align-items:center; justify-content:center; flex:0 0 16px; width:16px; height:16px; border-radius:50%; font-size:10px; line-height:16px; font-weight:500; }
+.calendar-unassigned { color:#6b7684; font-size:10px; }
+.planning-card { padding:8px; gap:6px; border-radius:8px; }
+.planning-title { width:100%; font-size:13px; font-weight:500; line-height:18px; margin-bottom:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.planning-meta { gap:4px; height:18px; }
+.planning-card .project-chip { font-size:10px; font-weight:400; line-height:16px; height:18px; padding-top:0; padding-bottom:0; }
+.planning-grip { font-size:14px; }
+.planning-list { gap:6px; }
+.planning-backlog .section-head { margin-bottom:10px; }
+.week-grid-panel .schedule-rows { padding:6px 0; }
+.month-week { min-height:80px; padding-bottom:3px; }
+.month-week .timeline-date { min-height:34px; padding:3px 6px; }
+.month-week .timeline-date strong { font-size:13px; font-weight:500; }
+.month-empty { height:20px; }
+/* A one-day interval keeps the project readable above its compact status row. */
+.team-calendar-layout .week-timeline,.calendar.month-board { min-width:840px; }
+.bar-span-1 { height:48px; }
+.schedule-row:has(.bar-span-1) { min-height:54px; }
+.bar-span-1 .bar-body strong { font-size:12px; line-height:15px; }
+.bar-span-1 .bar-meta { height:auto; flex-wrap:wrap; gap:0; }
+.bar-span-1 .bar-project { flex:0 0 100%; font-size:10px; line-height:13px; }
+.bar-span-1 .calendar-status-people { gap:3px; }
+.bar-span-1 .calendar-avatars { gap:0; }
+.bar-span-1 .calendar-avatar { width:14px; height:14px; flex-basis:14px; font-size:9px; }
+.bar-span-1 .calendar-avatar+.calendar-avatar { margin-left:-2px; }
+.team-calendar-layout .week-timeline,.calendar.month-board { min-width:826px; }
+.week-grid-panel>.section-head { margin-bottom:10px; }
+.week-grid-panel .section-head h3 { font-size:17px; font-weight:600; }
+.week-grid-panel .weekly-range { font-size:12px; margin-top:3px; }
+.week-grid-panel .timeline-date { padding:10px 8px; gap:5px; font-size:12px; }
+.week-grid-panel .timeline-date strong { font-size:16px; font-weight:500; }
