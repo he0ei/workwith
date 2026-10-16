@@ -103,7 +103,7 @@ main { max-width:1500px; padding:24px 36px 32px; }
 .check-circle { width:17px; height:17px; border-radius:6px; border-color:#cbd2da; }
 .badge,.priority { padding:4px 8px; border-radius:7px; font-size:11px; line-height:1.4; font-weight:600; }
 .badge { color:var(--t-secondary); background:var(--t-fill); }
-.status-1 { color:var(--t-blue); background:var(--t-blue-soft); }.status-2 { color:var(--ds-warning); background:var(--ds-warning-bg); }.status-3 { color:var(--ds-success); background:var(--ds-success-bg); }
+.status-1 { color:#167247; background:#e6f5ec; }.status-2 { color:var(--ds-warning); background:var(--ds-warning-bg); }.status-3 { color:#1b64da; background:#e8f3ff; }
 .priority { background:var(--t-fill); color:var(--t-secondary); }.priority.high { color:var(--ds-danger); background:var(--ds-danger-bg); }
 progress { height:7px; border-radius:8px; background:#edf0f3; }
 progress::-webkit-progress-bar { background:#edf0f3; }progress::-webkit-progress-value { background:var(--t-accent); border-radius:8px; }progress::-moz-progress-bar { background:var(--t-accent); }
@@ -459,15 +459,15 @@ footer { font-size:12px; }
 @media(max-width:1100px) { .team-calendar-layout { grid-template-columns:minmax(0,1fr); }.team-calendar-layout .planning-list { grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); } }
 @media(max-width:580px) { .team-calendar-layout .planning-list { grid-template-columns:minmax(0,1fr); }.schedule-feedback { max-width:92vw; white-space:normal; }.calendar-viewbar select { min-width:110px; } }
 @media(prefers-reduced-motion:reduce) { .schedule-bar { transition:none; } }
-/* Muted status dot and an always-visible label. */
+/* Status colors remain distinct from participant colors. */
 .task-card-footer { display:flex; align-items:center; gap:10px; margin-top:12px; }
 .task-card-footer .status-control { flex:1; min-width:0; width:auto; margin:0; }
 .task-status-indicator { --status-dot-color:#8a9bad; display:inline-flex; align-items:center; gap:5px; position:relative; flex:0 0 auto; height:20px; color:#526170; white-space:nowrap; cursor:default; }
 .status-mark { display:inline-flex; align-items:center; justify-content:center; position:relative; flex:0 0 9px; width:9px; height:9px; border:0; outline:0; border-radius:50%; background:var(--status-dot-color); box-shadow:none; }
-.status-dot-1 { --status-dot-color:#7d9b89; }.status-dot-2 { --status-dot-color:#b09c78; }.status-dot-3 { --status-dot-color:#929ba6; }
+.status-dot-1 { --status-dot-color:#23845b; color:#167247; }.status-dot-2 { --status-dot-color:#b09c78; }.status-dot-3 { --status-dot-color:#3182f6; color:#1b64da; }
 .status-mark svg { position:absolute; width:9px; height:9px; fill:none; stroke:white; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }
 .status-text { font-size:12px; line-height:20px; font-weight:500; }
-.column .dot-0 { background:#8a9bad; }.column .dot-1 { background:#7d9b89; }.column .dot-2 { background:#b09c78; }.column .dot-3 { background:#929ba6; }
+.column .dot-0 { background:#8a9bad; }.column .dot-1 { background:#23845b; }.column .dot-2 { background:#b09c78; }.column .dot-3 { background:#3182f6; }
 /* Two lines per task: title, then project and status together. */
 .schedule-bar { height:50px; }
 .schedule-row { min-height:58px; }
@@ -700,3 +700,7 @@ main:has(.meeting-workbench) footer { margin-top:16px; padding-top:12px; }
 #minutes-form .meeting-task-group input[type=checkbox] { width:16px; flex:none; margin:3px 0 0; }
 .meeting-task-group summary { cursor:pointer; font-size:12px; color:#4e5968; }
 .meeting-task-group summary>span { font-size:11px; color:#8b95a1; font-weight:400; margin-left:5px; }
+
+/* Keep the small calendar status label legible without adding row height. */
+.status-dot-1 .status-text,.status-dot-3 .status-text { font-weight:500; }
+.status-dot-3 .status-mark { width:10px; height:10px; flex-basis:10px; }
