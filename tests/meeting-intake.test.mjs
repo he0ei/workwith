@@ -9,7 +9,7 @@ test('intake matches explicit project, deduplicates actions and leaves uncertain
  const info=meetingIntake('프로젝트: 콘텐츠\n후속 업무\n- 정승재: 기획안 작성하기\n- 정승재: 기획안 작성하기\n- 최재희: 다음 주 문구 검토하기',[{id:'p',title:'콘텐츠'}],[{projectId:'p',title:'기획안 작성하기',assignee:'sj'}]);
  assert.equal(info.projectId,'p');assert.equal(info.drafts.length,2);assert.equal(info.drafts[0].duplicate,true);assert.equal(info.drafts[1].due,'');assert.equal(info.drafts[1].assignee,'jh');
  assert.equal(meetingIntake('배경 정보를 소개했다.',[],[]).drafts.length,0);
- assert.equal(meetingIntake('후속 업무\n- 자료 검토하기',[],[]).projectId,'__new__');
+ assert.equal(meetingIntake('후속 업무\n- 자료 검토하기',[],[]).projectId,'');
  assert.equal(meetingIntake('후속 업무\n- 양승연: 도구 스터디하기\n- 최재희: 도구 스터디하기',[],[]).drafts.length,2);
 });
 
@@ -23,4 +23,14 @@ test('intake batch stores provenance, meeting date and links atomically, retry d
  const other=await pg.rpc('authenticated','sy','workwith_snapshot');assert.equal(other.state.minutes[0].taskIds[0],other.state.tasks[0].id);
  const before=await pg.repository.load();await assert.rejects(mutate(pg.repository,{action:{type:'drafts.register',value:{...value,registrationId:'bad',drafts:[{...info.drafts[0],due:'bad'}]}},revision:before.state.revision},'sj'));assert.deepEqual(await pg.repository.load(),before);
  }finally{await pg.close();}
+});
+
+test('meeting title matches the existing collaboration project across spacing; ambiguity requires selection',()=>{
+ const projects=[{id:'gowoori',title:'고우리 협업 건'},{id:'other',title:'다른 협업 건'}];
+ assert.equal(meetingIntake('후속 업무\n- 자료 검토하기',projects,[],'','고우리협업 검토').projectId,'gowoori');
+ assert.equal(meetingIntake('회의 제목: 고우리협업 검토\n후속 업무\n- 자료 검토하기',projects,[]).projectId,'gowoori');
+ assert.equal(meetingIntake('프로젝트: 고우리 협업\n후속 업무\n- 자료 검토하기',projects,[]).projectId,'gowoori');
+ assert.equal(meetingIntake('회의 제목: 다른 협업 검토',projects,[],'gowoori').projectId,'gowoori');
+ assert.equal(meetingIntake('고우리협업 검토',projects.concat({id:'duplicate',title:'고우리 협업 프로젝트'}),[]).projectId,'');
+ assert.equal(meetingIntake('내용에 고우리협업을 언급했다.',projects,[],'','일반 회의').projectId,'');
 });
