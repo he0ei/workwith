@@ -704,3 +704,40 @@ main:has(.meeting-workbench) footer { margin-top:16px; padding-top:12px; }
 /* Keep the small calendar status label legible without adding row height. */
 .status-dot-1 .status-text,.status-dot-3 .status-text { font-weight:500; }
 .status-dot-3 .status-mark { width:10px; height:10px; flex-basis:10px; }
+/* Compact task dialog with real, state-preserving tabs. */
+dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
+.task-editor #edit-form>.section-head { padding:14px 20px; min-height:54px; margin:0; }
+.task-editor #dialog-title { font-size:19px; }
+.task-editor .task-edit-tabs { padding:0 20px; gap:20px; top:54px; }
+.task-editor .task-edit-tabs button { min-height:38px; padding:8px 2px; border-radius:0; background:transparent; border-bottom:2px solid transparent; font-size:14px; }
+.task-editor .task-edit-tabs button[aria-selected=true] { border-bottom-color:#3182f6; color:#1b64da; }
+.task-editor #edit-form>.form-grid { padding:12px 20px 0; margin:0; }
+.task-editor .task-status-strip { display:flex; align-items:center; gap:12px; margin:0; }
+.task-editor .task-status-strip legend { float:left; margin:0; font-size:12px; line-height:32px; }
+.task-editor .choice-row { display:flex; gap:5px; flex-wrap:wrap; }
+.task-editor .choice>span { padding:5px 10px; border-width:1px; border-radius:7px; font-size:13px; line-height:20px; }
+.task-editor .choice input:checked+span { font-weight:600; }
+.task-editor .task-edit-intro { gap:8px; padding:12px 0; }
+.task-editor input:not([type=checkbox]):not([type=radio]):not([type=file]),.task-editor select { min-height:36px; padding:7px 10px; font-size:14px; border-radius:8px; }
+.task-editor label,.task-editor legend { font-size:12px; }
+.task-editor .task-description textarea { min-height:64px; height:64px; padding:8px 0; font-size:14px; line-height:1.6; }
+.task-editor .task-edit-section { padding:12px 0; margin:0; }
+.task-editor .task-edit-section h3 { font-size:14px; margin-bottom:10px; }
+.task-editor fieldset { margin-bottom:10px; }
+.task-editor .collaborator-options { gap:6px; }
+.task-editor legend { margin-bottom:6px; }
+.task-editor .person-choice>span { padding:3px 8px 3px 4px; gap:5px; border-width:1px; border-radius:8px; font-size:12px; }
+.task-editor .person-choice .avatar { width:22px; height:22px; font-size:10px; }
+.task-editor .form-grid { gap:10px; margin:10px 0; }
+.task-editor .task-help { margin:6px 0 0; font-size:11px; }
+.task-editor [data-task-panel][hidden] { display:none!important; }
+.task-editor .attachment-drop { padding:12px; margin-top:10px; border-radius:10px; }
+.task-editor .attachment-add { width:36px; height:36px; min-height:36px; border-radius:8px; }
+.task-editor .attachment-drop strong { font-size:13px; }
+.task-editor .attachment-drop p { font-size:11px; margin:3px 0; }
+.task-editor .modal-actions { padding:10px 20px; gap:8px; }
+.task-editor .modal-actions button { min-height:36px; padding:7px 14px; font-size:13px; border-radius:8px; }
+.task-editor .modal-actions .primary { min-width:80px; }
+.task-editor .task-edit-section summary { font-size:12px; }
+.task-editor .advanced-fields { margin-top:12px; }
+@media(max-width:580px) { .task-editor .task-status-strip { display:block; }.task-editor .task-status-strip legend { float:none; line-height:1.5; margin-bottom:5px; }.task-editor input:not([type=checkbox]):not([type=radio]):not([type=file]),.task-editor select,.task-editor .task-description textarea { font-size:16px; } }
