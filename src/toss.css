@@ -692,3 +692,11 @@ main:has(.meeting-workbench) footer { margin-top:16px; padding-top:12px; }
 .meeting-review .meeting-draft.is-duplicate { opacity:.7; }
 #minutes-form .draft-fields input,#minutes-form .draft-fields select { background:#fff; border-color:#edf0f3; }
 .meeting-review .meeting-draft:has(input[name=draft]:checked) .draft-title input { color:#191f28; }
+/* Completed links are separate from work still in progress. */
+.meeting-task-group .meeting-task-options { border:0; padding:8px 0 0; margin:0; min-width:0; }
+.meeting-task-group .meeting-task-list { max-height:160px; overflow-y:auto; }
+.meeting-task-group .muted { font-size:12px; margin:6px 0; }
+#minutes-form .meeting-task-group .check-label { display:flex; flex-direction:row; align-items:flex-start; padding:6px 0; }
+#minutes-form .meeting-task-group input[type=checkbox] { width:16px; flex:none; margin:3px 0 0; }
+.meeting-task-group summary { cursor:pointer; font-size:12px; color:#4e5968; }
+.meeting-task-group summary>span { font-size:11px; color:#8b95a1; font-weight:400; margin-left:5px; }
