@@ -21,32 +21,37 @@ export function scheduleReason(task,next,mode){return `주간 보드 ${mode==='m
 export function installScheduleDrag(root,{capture,save,error,canStart,announce}){
  let active=null,suppress=null;
  function paint(bar,task,range){const p=barPosition(task,range);if(!p)return;for(let i=0;i<7;i++)bar.classList.remove('bar-start-'+i);for(let i=1;i<=7;i++)bar.classList.remove('bar-span-'+i);bar.classList.add('bar-start-'+p.first,'bar-span-'+p.span);}
- function clear(restore=true){if(!active)return;const a=active;active=null;if(restore)paint(a.bar,a.snapshot.task,a.range);a.bar.classList.remove('schedule-dragging');if(a.bar.hasPointerCapture?.(a.pointerId))a.bar.releasePointerCapture(a.pointerId);}
+ function clear(restore=true){if(!active)return;const a=active;active=null;if(restore)paint(a.bar,a.snapshot.task,a.range);if(a.bar.style){a.bar.style.transform='';a.bar.style.width='';}a.bar.classList.remove('schedule-dragging');if(a.bar.hasPointerCapture?.(a.pointerId))a.bar.releasePointerCapture(a.pointerId);}
  async function apply(snapshot,next,mode){if(snapshot.task.start===next.start&&snapshot.task.due===next.due)return;await save(snapshot,next,scheduleReason(snapshot.task,next,mode),mode);}
  root.addEventListener('pointerdown',e=>{
   const bar=e.target.closest?.('[data-schedule-bar]');if(!bar||e.button!==0||!canStart()||active)return;
   const handle=e.target.closest('[data-resize]');if(handle?.disabled)return;
   const snapshot=capture(bar.dataset.scheduleBar);if(!snapshot)return;
   const board=bar.closest('[data-week-timeline]'),range={start:board.dataset.weekTimeline,end:shiftDay(board.dataset.weekTimeline,6)};
-  active={bar,board,range,snapshot,mode:handle?.dataset.resize||'move',x:e.clientX,delta:0,next:null,pointerId:e.pointerId};
+  active={bar,board,range,snapshot,mode:handle?.dataset.resize||'move',x:e.clientX,delta:0,next:null,moved:false,width:bar.getBoundingClientRect?.().width||0,pointerId:e.pointerId};
   bar.setPointerCapture?.(e.pointerId);
  });
  root.addEventListener('pointermove',e=>{
   if(!active||active.pointerId!==e.pointerId)return;
-  const a=active,width=a.board.getBoundingClientRect().width/7,delta=Math.round((e.clientX-a.x)/width);
-  if(delta===a.delta)return;
-  const next=adjustSchedule(a.snapshot.task,a.mode,delta);if(!barPosition({...a.snapshot.task,...next},a.range))return;
-  a.delta=delta;a.next=next;a.bar.classList.add('schedule-dragging');paint(a.bar,{...a.snapshot.task,...next},a.range);if(e.cancelable)e.preventDefault();
+  const a=active,width=a.board.getBoundingClientRect().width/7,raw=e.clientX-a.x;
+  if(Math.abs(raw)<5&&!a.moved)return;a.moved=true;
+  const origin=barPosition(a.snapshot.task,a.range),duration=daysBetween(a.snapshot.task.start||a.snapshot.task.due,a.snapshot.task.due||a.snapshot.task.start);
+  const px=(origin.clippedStart||origin.clippedEnd)&&a.mode==='move'?raw:a.mode==='move'?Math.max(-origin.first*width,Math.min(raw,(7-origin.first-origin.span)*width)):a.mode==='start'?Math.max(-origin.first*width,Math.min(raw,duration*width)):Math.max(-duration*width,Math.min(raw,(7-origin.first-origin.span)*width));
+  const delta=Math.round(px/width),next=adjustSchedule(a.snapshot.task,a.mode,delta);if(!barPosition({...a.snapshot.task,...next},a.range))return;
+  a.delta=delta;a.next=next;a.bar.classList.add('schedule-dragging');
+  if(a.bar.style&&!origin.clippedStart&&!origin.clippedEnd){a.bar.style.transform=`translate3d(${a.mode==='due'?0:px}px,0,0)`;if(a.mode!=='move')a.bar.style.width=Math.max(width-8,a.width+(a.mode==='start'?-px:px))+'px';}
+  else paint(a.bar,{...a.snapshot.task,...next},a.range);
+  if(e.cancelable)e.preventDefault();
   announce(`${next.start||next.due} ~ ${next.due||next.start} · 놓으면 저장`);
  });
  root.addEventListener('pointerup',async e=>{
   if(!active||active.pointerId!==e.pointerId)return;const a=active;
   const rect=a.board.getBoundingClientRect(),inside=e.clientY>=rect.top&&e.clientY<=rect.bottom&&e.clientX>=rect.left&&e.clientX<=rect.right;
-  if(a.delta!==0)suppress={id:a.snapshot.task.id,until:Date.now()+600};clear(true);announce('');
-  if(!a.next||a.delta===0||!inside)return;
-  try{await apply(a.snapshot,a.next,a.mode);}catch(err){error(err);}
+  if(a.moved)suppress={id:a.snapshot.task.id,until:Date.now()+600};const changed=a.next&&a.delta!==0&&inside;if(changed)paint(a.bar,{...a.snapshot.task,...a.next},a.range);clear(!changed);announce('');
+  if(!changed)return;
+  a.bar.classList.add('schedule-saving');try{await apply(a.snapshot,a.next,a.mode);}catch(err){paint(a.bar,a.snapshot.task,a.range);error(err);}finally{a.bar.classList.remove('schedule-saving');}
  });
- const cancel=()=>{if(active&&active.delta!==0)suppress={id:active.snapshot.task.id,until:Date.now()+600};clear();announce('');};
+ const cancel=()=>{if(active?.moved)suppress={id:active.snapshot.task.id,until:Date.now()+600};clear();announce('');};
  root.addEventListener('pointercancel',cancel);root.addEventListener('visibilitychange',cancel);root.addEventListener('lostpointercapture',e=>{if(active?.pointerId===e.pointerId)cancel();});
  root.addEventListener('keydown',async e=>{
   if(e.key==='Escape'&&active){e.preventDefault();cancel();return;}
