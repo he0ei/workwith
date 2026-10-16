@@ -8,6 +8,14 @@ export function weekRange(date=today()){
  const day=new Date(date+'T12:00:00Z').getUTCDay()||7,start=shiftDay(date,1-day);
  return {start,end:shiftDay(start,6)};
 }
+export function weekDays(range,now=today()){
+ return Array.from({length:7},(_,index)=>{
+  const date=shiftDay(range.start,index);
+  const entries=range.tasks.filter(t=>(t.start||t.due)<=date&&(t.due||t.start)>=date).sort(priorityOrder).map(task=>({task,labels:[...(task.start===date?['계획']:[]),...(task.due===date?['마감']:[]) ]}));
+  for(const entry of entries)if(!entry.labels.length)entry.labels.push('진행 기간');
+  return {date,weekday:['월','화','수','목','금','토','일'][index],isToday:date===now,isWeekend:index>=5,entries};
+ });
+}
 export function weeklyCalendar(state,user,anchor=today(),now=today()){
  const current=weekRange(anchor),next=weekRange(shiftDay(current.start,7));
  const mine=visibleTasks(state,user).filter(t=>participates(t,user)&&t.status!=='완료');
