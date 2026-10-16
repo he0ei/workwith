@@ -65,14 +65,14 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-action','task');const editor=nodes.get('#editor').innerHTML;assert.ok(!editor.includes('주 담당자'));assert.match(editor,/여러 명을 선택할 수 있어요/);
   const values={title:'동등 공동 업무',visibility:'shared',projectId:'p',status:'보류 중',priority:'보통',start:'',due:'',hours:'1',kpiId:'',url:'',note:'',collaborator:['jh','sy']};
   await submit('task',values,'parallel-task');const saved=await item('tasks','parallel-task');assert.equal(saved.assignee,'');assert.deepEqual(saved.collaborators,['jh','sy']);assert.equal(saved.status,'검토 요청');
-  await click('data-nav','collab');assert.match(nodes.get('#app').innerHTML,/보류 중/);assert.ok(!/>검토 요청</.test(nodes.get('#app').innerHTML));
+  await click('data-nav','collab');assert.match(nodes.get('#app').innerHTML,/보류 중/);assert.ok(!/>검토 요청</.test(nodes.get('#app').innerHTML));assert.match(nodes.get('#app').innerHTML,/task-status-indicator status-dot-2/);assert.match(nodes.get('#app').innerHTML,/aria-label="업무 상태: 보류 중"/);
   await listeners.change({target:{id:'assignee-filter',value:'unassigned',dataset:{}}});assert.ok(!nodes.get('#app').innerHTML.includes('동등 공동 업무'));
  });
  await t.test('status-only change keeps private card visible in completed filter and preserves every other field',async()=>{
   const before=await item('tasks','t');await listeners.change({target:{id:'',dataset:{status:'t'},value:'완료'}});
   await click('data-nav','mine');await click('data-filter','done');assert.match(nodes.get('#app').innerHTML,/data-drag-task="t"/);
-  const completed=await item('tasks','t');await listeners.change({target:{id:'',dataset:{status:'t'},value:'진행 중'}});
-  const updated=await item('tasks','t');assert.equal(updated.visibility,'private');assert.deepEqual({...updated,status:completed.status,completedAt:completed.completedAt},completed);assert.match(nodes.get('#app').innerHTML,/data-drag-task="t"/);assert.equal(nodes.get('#toast').textContent,'상태를 변경했습니다.');
+  assert.match(nodes.get('#app').innerHTML,/task-status-indicator status-dot-3/);assert.match(nodes.get('#app').innerHTML,/aria-label="업무 상태: 완료"/);const completed=await item('tasks','t');await listeners.change({target:{id:'',dataset:{status:'t'},value:'진행 중'}});
+  const updated=await item('tasks','t');assert.equal(updated.visibility,'private');assert.deepEqual({...updated,status:completed.status,completedAt:completed.completedAt},completed);assert.match(nodes.get('#app').innerHTML,/data-drag-task="t"/);assert.equal(nodes.get('#toast').textContent,'상태를 변경했습니다.');assert.match(nodes.get('#app').innerHTML,/task-status-indicator status-dot-1/);
   await click('data-filter','done');assert.ok(!nodes.get('#app').innerHTML.includes('data-drag-task="t"'));
   await click('data-nav','dashboard');assert.match(nodes.get('#app').innerHTML,/진행 중 업무/);assert.ok(!nodes.get('#app').innerHTML.includes('이번 주에 집중할 업무'));assert.ok(!nodes.get('#app').innerHTML.includes('이번 주 업무'));assert.match(nodes.get('#app').innerHTML,/칸반보드/);assert.ok(!nodes.get('#app').innerHTML.includes('협업 스케줄'));assert.match(nodes.get('#app').innerHTML,new RegExp(before.title));
  });
@@ -228,7 +228,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
  });
  await t.test('unscheduled cards assign a chosen calendar date while retaining project, status and participants',async()=>{
   await click('data-action','task');await submit('task',{title:'일정 배정 검증',visibility:'shared',assignee:'sj',collaborator:'sy',projectId:'gowoori',status:'검토 요청',priority:'보통',hours:'1',kpiId:'',url:'',note:'',start:'',due:''},'planning-only');
-  await click('data-nav','calendar');const html=nodes.get('#app').innerHTML;assert.match(html,/class="planning-card"/);assert.match(html,/data-plan-task="planning-only"/);assert.match(html,/class="calendar-info"/);assert.match(html,/class="bar-project"/);assert.ok(!html.includes('id="schedule-instructions"'));
+  await click('data-nav','calendar');const html=nodes.get('#app').innerHTML;assert.match(html,/class="planning-card"/);assert.match(html,/task-status-indicator/);assert.match(html,/data-plan-task="planning-only"/);assert.match(html,/class="calendar-info"/);assert.match(html,/class="bar-project"/);assert.ok(!html.includes('id="schedule-instructions"'));
   await click('data-action','task','planning-only');assert.equal(nodes.get('#editor').open,true);await click('data-action','close');
   const source={dataset:{planTask:'planning-only'},classList:{add(){},remove(){}}},board={dataset:{weekTimeline:weekRange(today()).start},getBoundingClientRect:()=>({left:0,right:700,width:700}),querySelector:()=>null};
   document.elementFromPoint=()=>({closest:()=>board});

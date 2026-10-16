@@ -55,7 +55,7 @@ export function installScheduleDrag(root,{capture,save,error,canStart,announce})
  root.addEventListener('pointercancel',cancel);root.addEventListener('visibilitychange',cancel);root.addEventListener('lostpointercapture',e=>{if(active?.pointerId===e.pointerId)cancel();});
  root.addEventListener('keydown',async e=>{
   if(e.key==='Escape'&&active){e.preventDefault();cancel();return;}
-  if(active)return;
+  if(active||e.target.closest?.('[data-status-indicator]'))return;
   const bar=e.target.closest?.('[data-schedule-bar]');if(!bar||!['ArrowLeft','ArrowRight'].includes(e.key)||!canStart())return;
   const handle=e.target.closest('[data-resize]');if(handle?.disabled)return;
   e.preventDefault();const snapshot=capture(bar.dataset.scheduleBar);if(!snapshot)return;
