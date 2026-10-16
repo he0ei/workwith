@@ -43,3 +43,13 @@ test('completed work stays on its dates in past weeks, respects visibility and i
  assert.deepEqual(weeklyCalendar(state,'jh','2026-10-06','2026-10-16','sy').current.tasks.map(t=>t.id),['done']);
  assert.deepEqual(state,before);
 });
+test('priority orders every calendar queue and paused work stays below even low-priority completed work',()=>{
+ const task=(id,priority,status='진행 중')=>({id,title:id,priority,status,visibility:'shared',owner:'jh',assignee:'jh',start:'2026-10-12',due:'2026-10-14'});
+ const input=[task('a-paused-high','높음','검토 요청'),task('b-low','낮음'),task('z-high','높음'),task('c-paused-low','낮음','보류 중'),task('y-normal','보통'),task('d-complete','낮음','완료')];
+ const state={tasks:input},before=structuredClone(state),expected=['z-high','y-normal','b-low','d-complete','a-paused-high','c-paused-low'];
+ assert.deepEqual(weeklyCalendar(state,'jh','2026-10-16').current.tasks.map(t=>t.id),expected);
+ assert.deepEqual(weeklyCalendar({tasks:input.map(t=>({...t,start:'',due:''}))},'jh','2026-10-16').unscheduled.map(t=>t.id),expected);
+ assert.deepEqual(weeklyCalendar(state,'jh','2026-10-23').overdue.map(t=>t.id),expected.filter(id=>id!=='d-complete'));
+ const moved={tasks:input.map(t=>t.id==='z-high'?{...t,start:'2026-10-13',due:'2026-10-15'}:t)};
+ assert.deepEqual(weeklyCalendar(moved,'jh','2026-10-16').current.tasks.map(t=>t.id),expected);assert.deepEqual(state,before);
+});
