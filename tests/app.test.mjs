@@ -215,7 +215,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-action','task');await submit('task',{...values,title:'이번 주 일정 확인',start:range.start,due:range.end},'weekly-this');
   await click('data-action','task');await submit('task',{...values,title:'다음 주 일정 확인',start:next,due:shiftDay(next,6)},'weekly-next');
   await click('data-nav','calendar');assert.match(nodes.get('#app').innerHTML,/이번 주 할 일/);assert.equal((nodes.get('#app').innerHTML.match(/class="week-days"/g)||[]).length,2);assert.match(nodes.get('#app').innerHTML,/data-schedule-bar/);assert.match(nodes.get('#app').innerHTML,/다음 주 할 일/);assert.match(nodes.get('#app').innerHTML,/weekly-this/);assert.match(nodes.get('#app').innerHTML,/weekly-next/);
-  await click('data-action','calendar-month');assert.match(nodes.get('#app').innerHTML,/class="calendar"/);
+  await click('data-action','calendar-month');assert.match(nodes.get('#app').innerHTML,/class="calendar month-board"/);
   await click('data-action','calendar-week');await click('data-action','week-next');assert.match(nodes.get('#app').innerHTML,/선택한 주 할 일/);await click('data-action','week-today');
   await click('data-action','task','weekly-this');assert.equal(nodes.get('#editor').open,true);
   await submit('task',{...values,title:'이번 주 일정 확인',start:next,due:shiftDay(next,6),reason:'다음 주로 조정'},'weekly-this');
@@ -236,6 +236,22 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await listeners.pointermove({pointerId:1,clientX:250,clientY:100,cancelable:true,preventDefault(){}});
   await listeners.pointerup({pointerId:1,clientX:250,clientY:100});delete document.elementFromPoint;
   const saved=await item('tasks','planning-only');assert.equal(saved.start,shiftDay(weekRange(today()).start,2));assert.equal(saved.due,saved.start);assert.equal(saved.projectId,'gowoori');assert.equal(saved.status,'검토 요청');assert.deepEqual(saved.collaborators,['sy']);assert.ok(!nodes.get('#app').innerHTML.includes('data-plan-task="planning-only"'));assert.match(nodes.get('#app').innerHTML,/data-schedule-bar="planning-only"/);
+ });
+ await t.test('monthly date dragging persists only schedule fields through SQL and leaves inline metadata compact',async()=>{
+  await click('data-action','calendar-month');
+  const before=await item('tasks','planning-only'),from=weekRange(before.start).start,to=shiftDay(from,7),classes={add(){},remove(){}};
+  const board={dataset:{weekTimeline:from,monthWeek:'true'},getBoundingClientRect:()=>({left:0,right:700,width:700}),querySelector:()=>null};
+  const destination={...board,dataset:{weekTimeline:to,monthWeek:'true'}};
+  const bar={dataset:{scheduleBar:before.id},classList:classes,closest:selector=>selector==='[data-month-week]'?board:null};
+  const target={closest:selector=>selector==='[data-schedule-bar]'?bar:null};
+  document.elementFromPoint=()=>({closest:selector=>selector==='[data-month-week]'?destination:null});
+  await listeners.pointerdown({target,button:0,pointerId:2,clientX:250,clientY:50});
+  await listeners.pointermove({pointerId:2,clientX:250,clientY:200,cancelable:true,preventDefault(){}});
+  await listeners.pointerup({pointerId:2,clientX:250,clientY:200});delete document.elementFromPoint;
+  const after=await item('tasks',before.id);assert.equal(after.start,shiftDay(before.start,7));assert.equal(after.due,shiftDay(before.due,7));
+  for(const key of ['status','projectId','visibility','assignee','collaborators','note','url','dependencies'])assert.deepEqual(after[key],before[key]);
+  assert.match(nodes.get('#app').innerHTML,/class="bar-meta"/);assert.match(nodes.get('#app').innerHTML,/class="planning-meta"/);assert.ok((await pg.repository.load()).state.history.some(h=>String(h.message).includes('월간 보드')));
+  await click('data-action','calendar-week');
  });
  await t.test('team calendar shows shared work of other members and supports a member filter without a schedule button',async()=>{
   await click('data-action','task');await submit('task',{title:'승연 단독 일정',visibility:'shared',assignee:'sy',projectId:'gowoori',status:'예정',priority:'보통',hours:'1',kpiId:'',url:'',note:'함께 확인할 내용',start:today(),due:today()},'team-only');
