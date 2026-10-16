@@ -226,5 +226,16 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   const after=await item('tasks','weekly-this');assert.equal(after.start,shiftDay(before.start,1));assert.equal(after.due,shiftDay(before.due,1));assert.equal(after.visibility,before.visibility);assert.equal(after.status,before.status);assert.equal(after.projectId,before.projectId);assert.deepEqual(after.collaborators,before.collaborators);assert.match(nodes.get('#app').innerHTML,/<details class="next-week-board" open>/);nodes.delete('.next-week-board');
 
  });
+ await t.test('unscheduled cards assign a chosen calendar date while retaining project, status and participants',async()=>{
+  await click('data-action','task');await submit('task',{title:'일정 배정 검증',visibility:'shared',assignee:'sj',collaborator:'sy',projectId:'gowoori',status:'검토 요청',priority:'보통',hours:'1',kpiId:'',url:'',note:'',start:'',due:''},'planning-only');
+  await click('data-nav','calendar');const html=nodes.get('#app').innerHTML;assert.match(html,/class="planning-card"/);assert.match(html,/data-plan-task="planning-only"/);assert.match(html,/class="calendar-info"/);assert.match(html,/class="bar-project"/);assert.ok(!html.includes('id="schedule-instructions"'));
+  await click('data-action','task-plan','planning-only');assert.equal(nodes.get('#editor').open,true);await click('data-action','close');
+  const source={dataset:{planTask:'planning-only'},classList:{add(){},remove(){}}},board={dataset:{weekTimeline:weekRange(today()).start},getBoundingClientRect:()=>({left:0,right:700,width:700}),querySelector:()=>null};
+  document.elementFromPoint=()=>({closest:()=>board});
+  await listeners.pointerdown({target:{closest:s=>s==='[data-plan-task]'?source:null},button:0,pointerId:1,clientX:100,clientY:100});
+  await listeners.pointermove({pointerId:1,clientX:250,clientY:100,cancelable:true,preventDefault(){}});
+  await listeners.pointerup({pointerId:1,clientX:250,clientY:100});delete document.elementFromPoint;
+  const saved=await item('tasks','planning-only');assert.equal(saved.start,shiftDay(weekRange(today()).start,2));assert.equal(saved.due,saved.start);assert.equal(saved.projectId,'gowoori');assert.equal(saved.status,'검토 요청');assert.deepEqual(saved.collaborators,['sy']);assert.ok(!nodes.get('#app').innerHTML.includes('data-plan-task="planning-only"'));assert.match(nodes.get('#app').innerHTML,/data-schedule-bar="planning-only"/);
+ });
  await pg.close();
 });
