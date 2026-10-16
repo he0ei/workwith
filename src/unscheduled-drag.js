@@ -5,20 +5,22 @@ export function dropDate(board,x){
 }
 // Pointer capture keeps assignment consistent with moving/resizing scheduled bars.
 export function installUnscheduledDrag(root,{capture,save,error,canStart,announce}){
- let active=null,hover=null,suppress=null;
+ let active=null,hover=null,suppress=null,ghost=null;
  const clearHover=()=>{hover?.classList.remove('plan-drop-target');hover=null;};
- const clear=()=>{const a=active;active=null;a?.source.classList.remove('planning-dragging');if(a?.source.hasPointerCapture?.(a.pointerId))a.source.releasePointerCapture(a.pointerId);clearHover();announce('');};
+ const clear=()=>{ghost?.remove();ghost=null;const a=active;active=null;a?.source.classList.remove('planning-dragging');if(a?.source.hasPointerCapture?.(a.pointerId))a.source.releasePointerCapture(a.pointerId);clearHover();announce('');};
  const destination=e=>{const board=root.elementFromPoint?.(e.clientX,e.clientY)?.closest('[data-week-timeline]');return {board,date:board?dropDate(board,e.clientX):''};};
  root.addEventListener('pointerdown',e=>{
   const source=e.target.closest?.('[data-plan-task]');if(!source||e.button!==0||active||!canStart())return;
-  if(e.target.closest('input,select,[data-action="task-plan"]'))return;
+  if(e.target.closest('input,select'))return;
   const snapshot=capture(source.dataset.planTask);if(!snapshot||snapshot.task.start||snapshot.task.due)return;
   active={snapshot,source,x:e.clientX,y:e.clientY,pointerId:e.pointerId,moved:false};source.setPointerCapture?.(e.pointerId);
  });
  root.addEventListener('pointermove',e=>{
   if(!active||e.pointerId!==active.pointerId)return;
   if(Math.hypot(e.clientX-active.x,e.clientY-active.y)<6&&!active.moved)return;
-  active.moved=true;active.source.classList.add('planning-dragging');if(e.cancelable)e.preventDefault();
+  active.moved=true;active.source.classList.add('planning-dragging');
+  if(!ghost&&root.body&&active.source.cloneNode){ghost=active.source.cloneNode(true);ghost.removeAttribute('data-plan-task');ghost.removeAttribute('data-action');ghost.classList.add('planning-ghost');ghost.inert=true;ghost.setAttribute('aria-hidden','true');root.body.append(ghost);}
+  if(ghost)ghost.style.transform=`translate3d(${e.clientX+14}px,${e.clientY+14}px,0)`;if(e.cancelable)e.preventDefault();
   clearHover();const {board,date}=destination(e);if(!date){announce('원하는 날짜에 놓아 주세요.');return;}
   hover=board.querySelector('[data-plan-date="'+date+'"]');hover?.classList.add('plan-drop-target');announce(date+'에 일정 배정 · 놓으면 저장');
  });
