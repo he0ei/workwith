@@ -581,3 +581,12 @@ footer { font-size:12px; }
 .schedule-completed .bar-paint { opacity:.55; }
 .schedule-bar .bar-title-line strong,.planning-title-text,.dashboard-task-heading strong { flex:0 1 auto; }
 .task-card .task-heading .task-title { flex:0 1 auto; width:auto; }
+.meeting-project-options { margin:12px 0; padding:0; border:0; min-width:0; }
+.meeting-project-options legend { margin-bottom:8px; font-size:14px; font-weight:600; color:#4e5968; }
+.meeting-project-list { display:flex; flex-wrap:wrap; gap:8px; }
+.meeting-project-list .check-label { margin:0; padding:7px 10px; border:1px solid #e5e8eb; border-radius:9px; background:#fafbfc; font-size:13px; cursor:pointer; }
+.meeting-project-list .check-label:has(input:checked) { background:#edf5ff; border-color:#a7c9f9; color:#1b64da; }
+[data-meeting-date-status]:empty { display:none; }
+.meeting-draft>label { margin-bottom:10px; }
+.meeting-project-list .check-label { display:inline-flex; flex-direction:row; align-items:center; gap:6px; }
+.meeting-project-list .check-label input { width:auto; flex:none; margin:0; }
