@@ -391,3 +391,38 @@ footer { font-size:12px; }
 
 .timeline-touch-hint { display:none; }
 @media(max-width:760px) { .timeline-touch-hint { display:block; margin:0 0 12px; color:#6b7684; font-size:13px; } }
+/* Small project pills keep the issue title as the primary label. */
+.project-chip { display:inline-flex; align-items:center; width:fit-content; max-width:100%; border:1px solid #e5e8eb; border-radius:999px; padding:4px 10px; font-size:12px; line-height:1.5; font-weight:500; vertical-align:middle; }
+.project-colored { padding-left:20px; }
+.project-colored>span { display:block; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.task-card { border:1px solid #e5e8eb; box-shadow:none; }
+.calendar-compact { flex-wrap:wrap; gap:12px; margin-bottom:12px; }
+.calendar-compact .schedule-legend { margin:0; gap:12px; }
+.calendar-compact .schedule-legend>span { font-size:13px; }
+.calendar-info { position:relative; }
+.calendar-info>summary { display:flex; align-items:center; justify-content:center; width:28px; height:28px; border:1px solid #b0b8c1; border-radius:50%; color:#526170; font:600 15px Georgia,serif; cursor:pointer; list-style:none; }
+.calendar-info>summary::-webkit-details-marker { display:none; }
+.calendar-info[open]>summary { background:#edf5ff; color:#1b64da; border-color:#3182f6; }
+.calendar-info-content { position:absolute; z-index:8; top:36px; right:0; width:min(320px,78vw); padding:18px; border:1px solid #e5e8eb; border-radius:14px; background:#fff; box-shadow:0 8px 30px #333d4b20; font-size:14px; line-height:1.65; }
+.calendar-info-content p { margin:10px 0 0; color:#526170; }
+.bar-project { display:block; }
+.planning-backlog { margin-top:20px; }
+.planning-backlog h3 small { color:#6b7684; font-size:14px; font-weight:400; margin-left:8px; }
+.planning-hint { font-size:13px; color:#6b7684; }
+.planning-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }
+.planning-card { display:flex; align-items:center; gap:10px; padding:16px; border:1.5px solid #aebbc9; border-radius:14px; background:#fff; min-width:0; cursor:grab; }
+.planning-card:hover { border-color:#3182f6; background:#f8fbff; }
+.planning-card>div { flex:1; min-width:0; }
+.planning-title { display:block; border:0; padding:0; margin-bottom:8px; background:transparent; text-align:left; font-size:16px; line-height:1.5; font-weight:700; color:#333d4b; }
+.planning-title:hover { background:transparent; color:#1b64da; }
+.planning-card small { display:block; font-size:12px; color:#6b7684; margin-top:6px; }
+.planning-card>.text-btn { flex-shrink:0; font-size:13px; }
+.planning-grip { color:#6b7684; font-size:22px; }
+.planning-dragging { opacity:.5; }
+.timeline-date.plan-drop-target { background:#e8f3ff; box-shadow:inset 0 0 0 2px #3182f6; color:#1b64da; }
+@media(max-width:760px) { .planning-list { grid-template-columns:minmax(0,1fr); }.calendar-info-content { right:0; }.planning-card { padding:14px 12px; } }
+
+.planning-card { touch-action:none; user-select:none; }
+.calendar-info-heading { display:flex; justify-content:space-between; align-items:center; gap:8px; }.calendar-info-heading strong { margin:0; font-size:15px; }.calendar-info-heading .icon-btn { padding:0; width:32px; height:32px; min-height:32px; }
+
+@media(max-width:760px) { .calendar-info-content { position:fixed; left:16px; right:16px; top:20vh; bottom:auto; width:auto; max-height:65vh; overflow-y:auto; } }
