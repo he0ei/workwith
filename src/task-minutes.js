@@ -9,6 +9,7 @@ export function meetingTasks(meeting,tasks){
  return tasks.filter(t=>linkedMinutes(t,[meeting]).length);
 }
 export function selectMeetingTaskIds(ids,projectId,tasks){
- const allowed=new Set(tasks.filter(t=>projectId&&t.projectId===projectId&&t.visibility==='shared').map(t=>t.id));
+ const projects=new Set(Array.isArray(projectId)?projectId:[projectId].filter(Boolean));
+ const allowed=new Set(tasks.filter(t=>projects.has(t.projectId)&&t.visibility==='shared').map(t=>t.id));
  return [...new Set(ids.filter(id=>typeof id==='string'&&allowed.has(id)))];
 }

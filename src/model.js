@@ -105,7 +105,7 @@ export function parseMinutes(body){
 export function parseMeeting(body){
  const normalized=body.replace(/\r\n?/g,'\n').replace(/[\u2028\u2029]/g,'\n').replace(/[\u00a0\u2007\u202f]/g,' ');
  const project={title:'',goal:'',owner:'',start:'',due:''},drafts=[],unclassified=[],sections=[],topics=[];
- let meetingTitle='',meetingDate='',firstDate='',section='',mode='context',owner='',buffer=null;
+ let meetingTitle='',meetingDate='',firstDate='',section='',mode='context',owner='',buffer=null,activeProject='';
  const peopleIn=text=>USERS.filter(u=>new RegExp(u.name+'(?:\\s*(?:책임|주임|님))?').test(text));
  const taskHeading=text=>/^(?:업무|할\s*일|액션(?:\s*아이템)?|실행\s*항목|후속\s*업무|현재\s*담당\s*업무|향후\s*계획.*과제)\s*[:：]?$/.test(text);
  function flush(){if(!buffer)return;const source=buffer.source.join('\n'),persons=peopleIn(source),assignee=buffer.owner|| (persons.length===1?persons[0].id:'');
@@ -119,15 +119,15 @@ export function parseMeeting(body){
   const due=!relative&&dates.length===1&&dateOK(dates[0])?dates[0]:'';if(!due)issues.push('마감일 확인 필요');
   if(priorities.length!==1)issues.push('우선순위 확인 필요');
   const title=buffer.title.replace(/^[^:：]{1,35}[:：]\s*/, '').replace(/\s*(?:→|\/\s*\d{4}[-.])[^]*$/, '').trim();
-  drafts.push({id:uid(),title:(title||buffer.title).slice(0,200),assignee:uncertain?'':assignee,due,priority:priorities.length===1?priorities[0]:'보통',kpiTitle:'',kpiTarget:null,unit:'',issues,source,section:buffer.section,reason:buffer.reason,projectKey:''});buffer=null;
+  drafts.push({id:uid(),title:(title||buffer.title).slice(0,200),assignee:uncertain?'':assignee,due,priority:priorities.length===1?priorities[0]:'보통',kpiTitle:'',kpiTarget:null,unit:'',issues,source,section:buffer.section,reason:buffer.reason,projectHint:buffer.projectHint||'',projectKey:''});buffer=null;
  }
  for(const raw of normalized.split('\n')){
   const line=raw.trim();if(!line){flush();continue;}
-  if(/^-{3,}$/.test(line)){flush();section='';mode='context';owner='';meetingDate='';continue;}
+  if(/^-{3,}$/.test(line)){flush();section='';mode='context';owner='';meetingDate='';activeProject='';continue;}
   const date=line.match(/^(?:일자\s*[:：]\s*)?(\d{4})(?:[.\-/]|년\s*)(\d{1,2})(?:[.\-/]|월\s*)(\d{1,2})(?:[.]|일)?$/);
   if(date){flush();meetingDate=`${date[1]}-${date[2].padStart(2,'0')}-${date[3].padStart(2,'0')}`;if(!firstDate)firstDate=meetingDate;unclassified.push(line);continue;}
   const heading=line.match(/^회의(?:명|\s*제목|\s*목적)\s*[:：]\s*(.+)$/);if(heading){flush();if(!meetingTitle)meetingTitle=heading[1];unclassified.push(line);continue;}
-  const meta=line.match(/^(프로젝트(?:명)?|목표)\s*[:：]\s*(.+)$/);if(meta){flush();project[meta[1]==='목표'?'goal':'title']=meta[2];continue;}
+  const meta=line.match(/^(프로젝트(?:명)?|목표)\s*[:：]\s*(.+)$/);if(meta){flush();project[meta[1]==='목표'?'goal':'title']=meta[2];if(meta[1]!=='목표')activeProject=meta[2];continue;}
   const numbered=line.match(/^\d+[.)]\s*(.+)$/),plain=line.replace(/^#{1,6}\s*/,'').replace(/[:：]\s*$/,'');
   if(numbered||taskHeading(plain)||/^(?:대표님\s*)?기대\s*역할$|^대표님 기대 역할$/.test(plain)){
    flush();section=numbered?numbered[1]:plain;sections.push(section);owner='';mode=taskHeading(section)?'actions':'context';
@@ -138,7 +138,7 @@ export function parseMeeting(body){
   if(/^참석자\s*[:：]|^추가\s*협의\s*필요\s*[:：]/.test(line)){flush();unclassified.push(line);continue;}
   const persons=peopleIn(line),ownerHeading=persons.length===1&&new RegExp('^'+persons[0].name+'\\s*(?:책임|주임|님)?\\s*[:：]?$').test(line);
   if(ownerHeading){flush();owner=persons[0].id;unclassified.push(line);continue;}
-  if(line.includes('|')){flush();drafts.push(...parseMinutes(line).map(d=>({...d,source:line,section,reason:'구분 입력',projectKey:''})));continue;}
+  if(line.includes('|')){flush();drafts.push(...parseMinutes(line).map(d=>({...d,source:line,section,projectHint:activeProject,reason:'구분 입력',projectKey:''})));continue;}
   const explicitOwner=persons.length===1&&new RegExp('^'+persons[0].name+'\\s*(?:책임|주임|님)?\\s*[:：]').test(line);
   const bullet=/^[-*•]\s+/.test(line),actionable=/(하기|살펴보고|정리한다|공유하고|설명한다|발표\s*자료.*만들|미팅\s*예정|검토(?:한다|$)|확인하고|파악하고|반영|개선)/.test(line);
   // Context and role sections never become actions solely due to a mention of a name.
@@ -148,7 +148,7 @@ export function parseMeeting(body){
   if(buffer&&!bullet&&!explicitOwner&&!/^[^:：]{1,35}[:：]/.test(line)&&!/(?:[.!?]|한다|하기|정리|검토|예정)(?:\s*\([^]*\))?$/.test(buffer.source.at(-1))){
    buffer.source.push(line);buffer.title+=' '+line;continue;
   }
-  flush();buffer={title:line.replace(/^[-*•]\s*/,'').replace(/^업무\s*[:：]\s*/,''),source:[line],section:meetingDate?meetingDate+' · '+section:section,owner:explicitOwner?persons[0].id:owner,reason:mode==='actions'?'실행 과제 구역':contextAction?'설명 구역의 실행 표현':explicitOwner?'명시된 담당자 업무':'업무 표현'};
+  flush();buffer={projectHint:activeProject,title:line.replace(/^[-*•]\s*/,'').replace(/^업무\s*[:：]\s*/,''),source:[line],section:meetingDate?meetingDate+' · '+section:section,owner:explicitOwner?persons[0].id:owner,reason:mode==='actions'?'실행 과제 구역':contextAction?'설명 구역의 실행 표현':explicitOwner?'명시된 담당자 업무':'업무 표현'};
  }
  flush();
  const groups=[];
@@ -157,7 +157,7 @@ export function parseMeeting(body){
  }
  return {project,drafts,unclassified,meetingTitle:meetingTitle||(firstDate?firstDate+' 회의록':''),projects:groups,sections};
 }
-export function registerDrafts(state,{minutesId,title,body,projectId,drafts,acknowledged,newProject,newProjects,registrationId,meetingDate,taskIds=[]},actor){
+export function registerDrafts(state,{minutesId,title,body,projectId,drafts,acknowledged,newProject,newProjects,registrationId,meetingDate,taskIds=[],projectIds},actor){
  required(Array.isArray(drafts)&&drafts.length>0&&drafts.length<=50,'업무는 한 번에 1~50개 등록할 수 있습니다.');required(acknowledged,'초안을 검토하고 확인란을 선택하세요.');
  if(registrationId){required(str(registrationId,100)&&registrationId,'등록 ID 오류');const prior=state.minutes.find(m=>m.id===registrationId);if(prior){required(prior.body===body&&prior.author===actor,'이미 사용한 등록 ID입니다.');return structuredClone(state);}}
  required(meetingDate===undefined||dateOK(meetingDate),'회의 날짜를 확인하세요.');
@@ -165,10 +165,13 @@ export function registerDrafts(state,{minutesId,title,body,projectId,drafts,ackn
  const minuteId=archived?.id||registrationId||uid();let s=state;const projectMap=new Map();
  if(newProjects){required(!projectId&&!newProject&&Array.isArray(newProjects)&&newProjects.length>0,'프로젝트 그룹을 확인하세요.');for(const p of newProjects){required(typeof p.key==='string'&&!projectMap.has(p.key),'프로젝트 그룹 ID 오류');const id=uid();projectMap.set(p.key,id);s=change(s,{type:'project.save',value:{id,title:p.title,goal:p.goal,owner:p.owner,start:p.start,due:p.due}},actor);}}
  if(newProject){required(!projectId,'새 프로젝트와 기존 프로젝트를 함께 지정할 수 없습니다.');projectId=uid();s=change(s,{type:'project.save',value:{id:projectId,title:newProject.title,goal:newProject.goal,owner:newProject.owner,start:newProject.start,due:newProject.due}},actor);}
- const links=[...new Set([...(archived?.projectIds||[]),...(archived?.projectId?[archived.projectId]:[]),...(newProjects?[...projectMap.values()]:projectId?[projectId]:[])])];
- s=change(s,{type:'minutes.save',value:{id:minuteId,...(meetingDate?{meetingDate}:{}),title:archived?.title||title,body:archived?.body||body,projectId:archived?.projectId||projectId,...(links.length?{projectIds:links}:{}),author:archived?.author||actor,at:archived?.at||new Date().toISOString()}},actor);
- const linkedIds=taskIds.filter(id=>state.tasks.some(t=>t.id===id&&t.visibility==='shared'&&t.projectId===projectId));
- for(const d of drafts){const taskProjectId=newProjects?projectMap.get(d.projectKey):projectId;required(!newProjects||taskProjectId,'업무의 프로젝트 연결을 확인하세요.');let kpiId='';if(d.kpiTitle){required(taskProjectId&&d.kpiTarget!==null,'KPI는 프로젝트와 유효한 목표값이 필요합니다.');kpiId=uid();s=change(s,{type:'kpi.save',value:{id:kpiId,projectId:taskProjectId,title:d.kpiTitle,target:d.kpiTarget,current:0,unit:d.unit,method:'manual'}},actor);}
+ const selectedProjects=projectIds===undefined?(projectId?[projectId]:[]):projectIds;
+ required(Array.isArray(selectedProjects)&&selectedProjects.every(id=>typeof id==='string'&&s.projects.some(p=>p.id===id)),'기존 프로젝트 연결을 확인하세요.');
+ required(projectIds===undefined||!projectId||selectedProjects.includes(projectId),'회의록의 기존 프로젝트 연결을 확인하세요.');
+ const links=[...new Set([...selectedProjects,...(archived?.projectIds||[]),...(archived?.projectId?[archived.projectId]:[]),...(newProjects?[...projectMap.values()]:projectId?[projectId]:[])])];
+ s=change(s,{type:'minutes.save',value:{id:minuteId,...(meetingDate?{meetingDate}:{}),title:archived?.title||title,body:archived?.body||body,projectId:archived?.projectId||projectId||links[0]||'',...(links.length?{projectIds:links}:{}),author:archived?.author||actor,at:archived?.at||new Date().toISOString()}},actor);
+ const linkedIds=taskIds.filter(id=>state.tasks.some(t=>t.id===id&&t.visibility==='shared'&&links.includes(t.projectId)));
+ for(const d of drafts){const taskProjectId=newProjects?projectMap.get(d.projectKey):projectIds===undefined?projectId:d.projectId||(selectedProjects.length===1?selectedProjects[0]:'');required(projectIds===undefined||Boolean(taskProjectId)&&selectedProjects.includes(taskProjectId),'업무의 기존 프로젝트 연결을 확인하세요.');required(!newProjects||taskProjectId,'업무의 프로젝트 연결을 확인하세요.');let kpiId='';if(d.kpiTitle){required(taskProjectId&&d.kpiTarget!==null,'KPI는 프로젝트와 유효한 목표값이 필요합니다.');kpiId=uid();s=change(s,{type:'kpi.save',value:{id:kpiId,projectId:taskProjectId,title:d.kpiTitle,target:d.kpiTarget,current:0,unit:d.unit,method:'manual'}},actor);}
   const taskId=uid();linkedIds.push(taskId);s=change(s,{type:'task.save',value:{id:taskId,title:d.title,note:d.source?`회의록 검토 후 등록\n출처: ${d.section||'회의록'}\n${d.source}`:'회의록 검토 후 등록',owner:actor,assignee:d.assignee,projectId:taskProjectId,visibility:'shared',status:'예정',priority:d.priority,start:'',due:d.due,hours:0,completedAt:'',dependencies:[],kpiId,url:''}},actor);
  }
  const record=s.minutes.find(m=>m.id===minuteId);s=change(s,{type:'minutes.save',value:{...record,taskIds:[...new Set([...(archived?.taskIds||[]),...linkedIds])]}},actor);return s;

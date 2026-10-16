@@ -19,3 +19,9 @@ test('automatic headings preserve original meeting prose and deduplicate against
  const result=meetingIntake(body,[{id:'p',title:'MYMAM'}],[{projectId:'p',title:'MYMAM 상세페이지 기획하기',assignee:'sy'}]);
  assert.equal(result.projectId,'p');assert.equal(result.drafts[0].title,'MYMAM 상세페이지 기획');assert.match(result.drafts[0].source,/기획한다/);assert.equal(result.drafts[0].duplicate,true);
 });
+test('headings retain the work object/action and normalize compound labels instead of evaluative direction',()=>{
+ assert.equal(compactTaskTitle('MYMAM 서비스소개서 신뢰감있는 방향으로 개선'),'MYMAM 서비스 소개서 개선');
+ assert.equal(compactTaskTitle('MYMAM 서비스소개서를 신뢰감 있는 방향으로 개선한다.'),'MYMAM 서비스 소개서 개선');
+ assert.equal(compactTaskTitle('발표 자료 만들기 (계정 확인 필요)'),'발표 자료 제작');
+ assert.equal(compactTaskTitle('신뢰감 조사'),'신뢰감 조사');
+});

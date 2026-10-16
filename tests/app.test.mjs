@@ -268,5 +268,21 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-action','calendar-month');html=nodes.get('#app').innerHTML;assert.match(html,/data-schedule-bar="team-only"/);assert.match(html,/업무 상태: 완료/);assert.match(html,/bar-title-line/);
   assert.deepEqual((await pg.repository.load()).state,before.state);
  });
+ await t.test('pasted date and multiple project links reach the SQL archive and each task without new projects',async()=>{
+  for(const [id,title] of [['multi-alpha','ALPHA 서비스소개서'],['multi-beta','BETA 제품']]){await click('data-action','project');await submit('project',{title,goal:'',owner:'sj',start:'',due:''},id);}
+  await click('data-nav','minutes');const sections=new Map(['[data-intake]','[data-meeting-projects]','[data-meeting-tasks]','[data-meeting-date-status]'].map(k=>[k,{innerHTML:'',textContent:''}]));
+  const values={title:'여러 프로젝트 검증',meetingDate:today(),body:'회의일자: 2026년 10월 8일 (목)\n후속 업무\n- 양승연: ALPHA 서비스소개서 신뢰감있는 방향으로 개선하기\n- 최재희: BETA 제품 자료 정리하기',meetingProjectSelection:'1',meetingProject:['multi-alpha','multi-beta'],generateTasks:'on'};
+  const date={get value(){return values.meetingDate;},set value(v){values.meetingDate=v;}},title={get value(){return values.title;},set value(v){values.title=v;}};
+  const form={id:'minutes-form',values,querySelector:s=>s==='[name=meetingDate]'?date:s==='[name=title]'?title:sections.get(s)};nodes.set('#minutes-form',form);
+  await listeners.input({target:{name:'body',value:values.body,closest:s=>s==='#minutes-form'||s==='form'?form:null}});
+  assert.equal(values.meetingDate,'2026-10-08');assert.match(sections.get('[data-meeting-projects]').innerHTML,/value="multi-alpha" checked/);assert.match(sections.get('[data-meeting-projects]').innerHTML,/value="multi-beta" checked/);
+  assert.match(sections.get('[data-intake]').innerHTML,/ALPHA 서비스 소개서 개선/);
+  values.draft=[...sections.get('[data-intake]').innerHTML.matchAll(/name="draft" value="([^"]+)"/g)].map(m=>m[1]);assert.equal(values.draft.length,2);
+  const count=(await pg.repository.load()).state.projects.length;
+  await listeners.submit({preventDefault(){},target:form});const result=await pg.repository.load(),record=result.state.minutes.find(m=>m.title===values.title);assert.ok(record);assert.equal(record.meetingDate,'2026-10-08');assert.deepEqual(new Set(record.projectIds),new Set(['multi-alpha','multi-beta']));assert.equal(result.state.projects.length,count);
+  const linked=result.state.tasks.filter(t=>record.taskIds.includes(t.id));assert.deepEqual(new Set(linked.map(t=>t.projectId)),new Set(['multi-alpha','multi-beta']));assert.equal(linked.find(t=>t.projectId==='multi-alpha').title,'ALPHA 서비스 소개서 개선');assert.match(linked.find(t=>t.projectId==='multi-alpha').note,/신뢰감있는 방향/);
+  await click('data-action','minutes-edit',record.id);assert.match(nodes.get('#editor').innerHTML,/value="multi-alpha" checked/);assert.match(nodes.get('#editor').innerHTML,/value="multi-beta" checked/);
+  await submit('minutes',{...record,meetingProjectSelection:'1',meetingProject:['multi-beta'],task:record.taskIds},record.id);const edited=await item('minutes',record.id);assert.deepEqual(edited.projectIds,['multi-beta']);assert.deepEqual(edited.taskIds,[linked.find(t=>t.projectId==='multi-beta').id]);nodes.delete('#minutes-form');
+ });
  await pg.close();
 });
