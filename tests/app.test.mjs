@@ -182,11 +182,16 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-action','minutes-edit',m.id);await submit('minutes',{...await item('minutes',m.id),projectId:'rank-p1',task:['rank-t0','rank-t1']},m.id);assert.deepEqual((await item('minutes',m.id)).taskIds,['rank-t1']);
   await click('data-action','task-minutes','meeting-task2');assert.ok(!nodes.get('#editor').innerHTML.includes('프로젝트 업무 회의'));await click('data-action','close');
  });
- await t.test('pasted meeting registers linked project tasks with one submit and skips existing task titles',async()=>{
-  await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'업무 자동화 회의',body:'프로젝트: 자동화\n후속 업무\n- 정승재: 초안 작성하기\n- 양승연: 시안 검토하기',meetingDate:'2026-10-15',projectId:'__new__',newProjectTitle:'자동화',generateTasks:'on'}}});
-  let snapshot=await pg.repository.load();const project=snapshot.state.projects.find(p=>p.title==='자동화'),m=snapshot.state.minutes.find(m=>m.title==='업무 자동화 회의');assert.ok(project);assert.equal(snapshot.state.tasks.filter(t=>t.projectId===project.id).length,2);assert.equal(m.projectId,project.id);assert.equal(m.taskIds.length,2);assert.equal(m.meetingDate,'2026-10-15');
-  await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'추가 논의',body:'후속 업무\n- 정승재: 초안 작성하기\n- 최재희: 문구 작성하기',meetingDate:'2026-10-15',projectId:project.id,generateTasks:'on'}}});
-  snapshot=await pg.repository.load();assert.equal(snapshot.state.tasks.filter(t=>t.projectId===project.id).length,3);assert.equal(snapshot.state.minutes.find(m=>m.title==='추가 논의').taskIds.length,1);
+ await t.test('pasted meeting creates issue cards in the existing collaboration project and never creates a project',async()=>{
+  const values={title:'고우리협업 검토',body:'후속 업무\n- 정승재: 초안 작성하기\n- 양승연: 시안 검토하기',meetingDate:'2026-10-16',projectId:'',generateTasks:'on'};
+  const before=await pg.repository.load();await listeners.submit({preventDefault(){},target:{id:'minutes-form',values}});
+  assert.deepEqual(await pg.repository.load(),before);assert.match(nodes.get('#login-error').textContent,/기존 프로젝트/);
+  await click('data-action','project');await submit('project',{title:'고우리 협업 건',goal:'',owner:'sj',start:'',due:''},'gowoori');
+  await listeners.submit({preventDefault(){},target:{id:'minutes-form',values}});
+  let snapshot=await pg.repository.load();const project=snapshot.state.projects.find(p=>p.id==='gowoori'),m=snapshot.state.minutes.find(m=>m.title==='고우리협업 검토');
+  assert.equal(snapshot.state.projects.length,before.state.projects.length+1);assert.equal(snapshot.state.tasks.filter(t=>t.projectId===project.id).length,2);assert.equal(m.projectId,project.id);assert.equal(m.taskIds.length,2);
+  await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'추가 논의',body:'후속 업무\n- 정승재: 초안 작성하기\n- 최재희: 문구 작성하기',meetingDate:'2026-10-16',projectId:project.id,generateTasks:'on'}}});
+  snapshot=await pg.repository.load();assert.equal(snapshot.state.tasks.filter(t=>t.projectId===project.id).length,3);assert.equal(snapshot.state.minutes.find(m=>m.title==='추가 논의').taskIds.length,1);assert.equal(snapshot.state.projects.length,before.state.projects.length+1);
  });
  await pg.close();
 });
