@@ -261,5 +261,12 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-action','task','team-only');assert.match(nodes.get('#editor').innerHTML,/함께 확인할 내용/);await click('data-action','close');
   await listeners.change({target:{id:'calendar-member',value:'',dataset:{}}});
  });
+ await t.test('completed tasks retain title priority chips in both calendars without rendering writes',async()=>{
+  await listeners.change({target:{id:'',dataset:{status:'team-only'},value:'완료'}});
+  const before=await pg.repository.load();await click('data-nav','calendar');
+  let html=nodes.get('#app').innerHTML;assert.match(html,/data-schedule-bar="team-only"/);assert.match(html,/schedule-completed/);assert.match(html,/업무 상태: 완료/);assert.match(html,/완료 [0-9]+개/);assert.match(html,/task-priority-chip priority-normal/);
+  await click('data-action','calendar-month');html=nodes.get('#app').innerHTML;assert.match(html,/data-schedule-bar="team-only"/);assert.match(html,/업무 상태: 완료/);assert.match(html,/bar-title-line/);
+  assert.deepEqual((await pg.repository.load()).state,before.state);
+ });
  await pg.close();
 });
