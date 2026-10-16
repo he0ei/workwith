@@ -28,3 +28,7 @@ export function weeklyCalendar(state,user,anchor=today(),now=today(),member=''){
  const list=range=>mine.filter(t=>inRange(t,range)).sort(calendarOrder);
  return {current:{...current,tasks:list(current)},next:{...next,tasks:list(next)},overdue:mine.filter(t=>t.status!=='완료'&&t.due&&t.due<now&&t.due<current.start).sort(calendarOrder),unscheduled:mine.filter(t=>!t.start&&!t.due).sort(calendarOrder)};
 }
+// A task spanning today counts once, including completed work shown on the calendar.
+export function calendarDayTasks(state,user,date=today()){
+ return calendarTasks(state,user).filter(t=>{const start=t.start||t.due,end=t.due||t.start;return Boolean(start&&end&&start<=date&&date<=end);});
+}
