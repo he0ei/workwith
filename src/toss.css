@@ -467,10 +467,41 @@ footer { font-size:12px; }
 .status-dot-1 { --status-dot-color:#7d9b89; }.status-dot-2 { --status-dot-color:#b09c78; }.status-dot-3 { --status-dot-color:#929ba6; }
 .status-mark svg { position:absolute; width:9px; height:9px; fill:none; stroke:white; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }
 .status-text { font-size:12px; line-height:20px; font-weight:500; }
-.schedule-bar { height:68px; }.schedule-row { min-height:80px; }
-.schedule-bar .bar-body { justify-content:flex-start; padding-top:4px; }
-.schedule-bar>.task-status-indicator { position:absolute; right:20px; bottom:2px; }
-.schedule-bar .bar-project { padding-right:0; }
-.planning-card { position:relative; padding-right:14px; padding-bottom:30px; }
-.planning-card>.task-status-indicator { position:absolute; right:12px; bottom:5px; }
 .column .dot-0 { background:#8a9bad; }.column .dot-1 { background:#7d9b89; }.column .dot-2 { background:#b09c78; }.column .dot-3 { background:#929ba6; }
+/* Two lines per task: title, then project and status together. */
+.schedule-bar { height:50px; }
+.schedule-row { min-height:58px; }
+.schedule-bar .bar-body { padding-top:0; justify-content:center; gap:0; }
+.bar-meta { display:flex; align-items:center; gap:8px; width:100%; min-width:0; line-height:20px; }
+.schedule-bar .bar-project { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+.bar-meta .task-status-indicator { position:static; height:20px; }
+.planning-card { padding:10px; border-radius:10px; box-shadow:none; }
+.planning-title { margin-bottom:3px; font-size:14px; line-height:1.45; }
+.planning-meta { display:flex; align-items:center; gap:6px; min-width:0; }
+.planning-meta .project-chip { min-width:0; max-width:100%; flex:1; padding-top:1px; padding-bottom:1px; }
+.planning-meta .project-chip>span { max-width:100%; }
+.planning-meta .task-status-indicator { position:static; }
+.planning-meta .status-text { font-size:11px; }
+.planning-grip { font-size:16px; }
+.planning-list { gap:8px; }
+.month-panel { padding:0; overflow:hidden; }
+.calendar.month-board { display:block; min-width:700px; padding:0; gap:0; background:#fff; border:0; }
+.month-week { min-height:110px; border-bottom:1px solid #e5eaf0; padding-bottom:6px; }
+.month-week:last-child { border-bottom:0; }
+.month-week .week-days { border:0; }
+.month-week .timeline-date { min-height:48px; padding:5px 8px; gap:4px; flex-direction:row; align-items:center; justify-content:center; font-size:12px; border-radius:0; }
+.month-week .timeline-date strong { font-size:15px; }
+.month-week .outside-month { color:#b0b8c1; background:#fafbfc; }
+.month-week .schedule-rows { padding:4px 0 0; }
+.month-week .schedule-row { min-height:56px; }
+.month-week .bar-body strong { font-size:14px; }
+.month-empty { height:34px; }
+.month-drag-ghost { position:fixed; left:0; top:0; width:240px; z-index:999; pointer-events:none; opacity:.95; box-shadow:0 8px 28px #25385830; will-change:transform; }
+.planning-title { min-height:0; }
+.month-week .schedule-bar,.month-week .bar-body { touch-action:none; }
+.team-calendar-layout .week-timeline { min-width:700px; }
+.schedule-bar .bar-handle { width:10px; min-width:10px; padding:0; flex:0 0 10px; }
+.bar-meta { gap:4px; }
+.bar-meta .task-status-indicator { gap:3px; }
+.bar-meta .status-text { font-size:11px; }
+.bar-meta .status-mark { width:7px; height:7px; flex-basis:7px; }

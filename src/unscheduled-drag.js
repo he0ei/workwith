@@ -25,9 +25,9 @@ export function installUnscheduledDrag(root,{capture,save,error,canStart,announc
   hover=board.querySelector('[data-plan-date="'+date+'"]');hover?.classList.add('plan-drop-target');announce(date+'에 일정 배정 · 놓으면 저장');
  });
  root.addEventListener('pointerup',async e=>{
-  if(!active||e.pointerId!==active.pointerId)return;const a=active,{date}=destination(e);
+  if(!active||e.pointerId!==active.pointerId)return;const a=active,{date,board}=destination(e);
   if(a.moved)suppress={id:a.snapshot.task.id,until:Date.now()+600};clear();if(!a.moved||!date)return;
-  try{await save(a.snapshot,{start:date,due:date},'주간 보드에서 일정 미지정 업무 배정 · '+date,'move');}catch(err){error(err);}
+  try{await save(a.snapshot,{start:date,due:date},(board?.dataset.monthWeek?'월간':'주간')+' 보드에서 일정 미지정 업무 배정 · '+date,'move');}catch(err){error(err);}
  });
  const cancel=()=>{if(active?.moved)suppress={id:active.snapshot.task.id,until:Date.now()+600};clear();};
  root.addEventListener('pointercancel',cancel);root.addEventListener('visibilitychange',cancel);root.addEventListener('lostpointercapture',e=>{if(active?.pointerId===e.pointerId)cancel();});
