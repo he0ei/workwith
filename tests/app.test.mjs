@@ -25,7 +25,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
  const read=async()=>{const result=await pg.repository.load();return Object.entries(result.state).filter(([,v])=>Array.isArray(v)).flatMap(([entity,values])=>values.map(x=>({entity,payload:JSON.stringify(x)})));};
  const item=async(entity,id)=>{const result=await pg.repository.load();return result.state[entity].find(x=>x.id===id);};
  await start(store);
- await t.test('empty dashboard shows real login user and shared status',()=>{assert.match(nodes.get('#app').innerHTML,/공유 DB 연결/);assert.ok(!nodes.get('#app').innerHTML.includes('시연 사용자'));assert.ok([...timers.values()].some(x=>x.delay===30000));});
+ await t.test('empty dashboard shows real login user and shared status',()=>{assert.match(nodes.get('#app').innerHTML,/공유 DB 연결/);assert.match(nodes.get('#app').innerHTML,/aria-current="page" class="active"><span>.*?<\/span><span class="nav-text">팀 캘린더/);assert.ok(!nodes.get('#app').innerHTML.includes('시연 사용자'));assert.ok([...timers.values()].some(x=>x.delay===30000));});
  await t.test('project and private task save to SQL, not localStorage',async()=>{
   await click('data-action','project');await submit('project',{title:'test project',owner:'sj',start:'',due:'',goal:'goal'},'p');assert.equal((await item('projects','p')).title,'test project');
   await click('data-action','task-private');await submit('task',{title:'private UI',visibility:'private',assignee:'sy',projectId:'p',status:'예정',priority:'높음',start:'',due:'',hours:'1',kpiId:'',url:'',note:'private'},'t');assert.equal((await item('tasks','t')).assignee,'sj');assert.equal((await item('tasks','t')).projectId,'');
@@ -127,7 +127,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   const failedPath=path.replace('000000000002.pdf','000000000003.pdf');store.uploadAttachment=async()=>({...attachment,path:failedPath});
   await click('data-action','artifact','p');await submit('artifact',{title:'잘못된 프로젝트',projectId:'missing',url:'',file},'failed-result');assert.ok(!await item('artifacts','failed-result'));assert.deepEqual(removed,[failedPath]);assert.equal((await item('artifacts','file-result')).attachment.path,path);assert.equal(nodes.get('#editor').open,true);await click('data-action','close');
  });
- await t.test('settings labels reflect Supabase and no demo data controls',async()=>{await click('data-nav','settings');const html=nodes.get('#app').innerHTML;assert.match(html,/Supabase PostgreSQL 공유/);for(const label of ['전체 시연 데이터 백업','시연 데이터 준비','JSON 내보내기','예시 데이터 불러오기'])assert.ok(!html.includes(label));});
+ await t.test('settings labels reflect Supabase and no demo data controls',async()=>{await click('data-nav','settings');const html=nodes.get('#app').innerHTML;assert.match(html,/내 계정/);assert.match(html,/비밀번호 변경/);assert.ok(!html.includes('워크스페이스 설정'));assert.ok(!html.includes('최근 변경 이력'));assert.ok(!html.includes('Supabase PostgreSQL 공유'));for(const label of ['전체 시연 데이터 백업','시연 데이터 준비','JSON 내보내기','예시 데이터 불러오기'])assert.ok(!html.includes(label));});
  await t.test('settings password form validates confirmation and clears credentials after successful change',async()=>{
   let called=0;store.changePassword=async(current,next)=>{called++;assert.equal(current,'temporary-test');assert.equal(next,'replacement-test');};
   await click('data-nav','settings');assert.match(nodes.get('#app').innerHTML,/비밀번호 변경/);await click('data-action','password-change');assert.match(nodes.get('#editor').innerHTML,/autocomplete="current-password"/);assert.match(nodes.get('#editor').innerHTML,/autocomplete="new-password"/);
@@ -250,7 +250,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await listeners.pointerup({pointerId:2,clientX:250,clientY:200});delete document.elementFromPoint;
   const after=await item('tasks',before.id);assert.equal(after.start,shiftDay(before.start,7));assert.equal(after.due,shiftDay(before.due,7));
   for(const key of ['status','projectId','visibility','assignee','collaborators','note','url','dependencies'])assert.deepEqual(after[key],before[key]);
-  assert.match(nodes.get('#app').innerHTML,/class="bar-meta"/);assert.match(nodes.get('#app').innerHTML,/class="planning-meta"/);assert.ok((await pg.repository.load()).state.history.some(h=>String(h.message).includes('월간 보드')));
+  assert.match(nodes.get('#app').innerHTML,/class="bar-meta"/);assert.match(nodes.get('#app').innerHTML,/class="planning-meta"/);assert.equal((await pg.repository.load()).state.history.length,0);
   await click('data-action','calendar-week');
  });
  await t.test('team calendar shows shared work of other members and supports a member filter without a schedule button',async()=>{

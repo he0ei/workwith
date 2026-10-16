@@ -1,3 +1,4 @@
+import {empty} from './model.js';
 import {SUPABASE_URL,SUPABASE_KEY} from './config.js';
 import {ATTACHMENT_BUCKET,TASK_ATTACHMENT_BUCKET,ATTACHMENT_TYPES,attachmentBytes,validAttachment} from './attachments.js';
 export class SharedStore{
@@ -63,7 +64,7 @@ export class SharedStore{
   if(path==='state')return this.read();if(path==='version')return this.version();
   throw Error('지원하지 않는 요청입니다.');
  }
- async read(){return this.http('/rest/v1/rpc/workwith_snapshot',{},await this.access());}
+ async read(){const token=await this.access(),setup=await this.http('/rest/v1/rpc/workwith_password_status',{},token);if(setup.required)return {state:empty(),versions:{},user:setup.user,passwordChangeRequired:true};return {...await this.http('/rest/v1/rpc/workwith_snapshot',{},token),passwordChangeRequired:false};}
  async uploadAttachment(file,{taskId}={}){
   const bytes=await attachmentBytes(file),token=await this.access();
   const user=await this.http('/auth/v1/user',undefined,token);

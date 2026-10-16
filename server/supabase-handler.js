@@ -19,8 +19,9 @@ export async function handle(request,env,fetcher=fetch){
    const r=await fetcher(url+path,{method:body===undefined?'GET':'POST',headers:{apikey:service,Authorization:'Bearer '+service,'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});
    if(!r.ok)throw new ApiError(503,'공유 DB 작업을 완료하지 못했습니다.');return r.json();
   }
-  const members=await db('/rest/v1/workwith_members?select=member_id&user_id=eq.'+encodeURIComponent(user.id));
+  const members=await db('/rest/v1/workwith_members?select=member_id,password_change_required&user_id=eq.'+encodeURIComponent(user.id));
   if(members.length!==1)throw new ApiError(403,'관리자가 등록한 팀원만 이용할 수 있습니다.');
+  if(members[0].password_change_required)throw new ApiError(403,'첫 로그인 비밀번호를 변경해 주세요.');
   if(!request.headers.get('Content-Type')?.startsWith('application/json'))throw new ApiError(415,'JSON 요청만 허용합니다.');
   const text=await request.text();if(text.length>100000)throw new ApiError(413,'요청이 너무 큽니다.');
   let body;try{body=JSON.parse(text);}catch{throw new ApiError(400,'요청 형식 오류');}
