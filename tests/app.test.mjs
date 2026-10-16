@@ -284,5 +284,27 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-action','minutes-edit',record.id);assert.match(nodes.get('#editor').innerHTML,/value="multi-alpha" checked/);assert.match(nodes.get('#editor').innerHTML,/value="multi-beta" checked/);
   await submit('minutes',{...record,meetingProjectSelection:'1',meetingProject:['multi-beta'],task:record.taskIds},record.id);const edited=await item('minutes',record.id);assert.deepEqual(edited.projectIds,['multi-beta']);assert.deepEqual(edited.taskIds,[linked.find(t=>t.projectId==='multi-beta').id]);nodes.delete('#minutes-form');
  });
+ await t.test('meeting links hide completed projects, separate completed tasks and preserve historical links',async()=>{
+  for(const [id,title] of [['link-open','진행 연결 프로젝트'],['link-closed','완료 연결 프로젝트']]){await click('data-action','project');await submit('project',{title,goal:'',owner:'sj',start:'',due:''},id);}
+  for(const [id,title,status,projectId] of [['link-active-task','남은 연결 업무','진행 중','link-open'],['link-done-task','완료 연결 업무','완료','link-open'],['link-old-task','기존 완료 프로젝트 업무','완료','link-closed']]){await click('data-action','task');await submit('task',{title,visibility:'shared',assignee:'sj',projectId,status,priority:'보통',start:'',due:'',hours:'0',kpiId:'',url:'',note:''},id);}
+  const create=values=>listeners.submit({preventDefault(){},target:{id:'minutes-form',values}});
+  await create({title:'완료 전 기록',meetingDate:today(),projectId:'link-closed',task:['link-old-task'],body:'기존 연결을 보존합니다.'});
+  const old=(await pg.repository.load()).state.minutes.find(m=>m.title==='완료 전 기록');
+  await click('data-action','project-toggle','link-closed');await click('data-nav','minutes');
+  let html=nodes.get('#app').innerHTML;const choices=html.split('data-meeting-projects>')[1].split('</fieldset>')[0];assert.ok(!choices.includes('value="link-closed"'));assert.match(choices,/value="link-open"/);
+  await create({title:'상태별 연결 기록',meetingDate:today(),projectId:'link-open',task:['link-active-task','link-done-task','link-old-task'],body:'업무 연결을 확인합니다.'});
+  const record=(await pg.repository.load()).state.minutes.find(m=>m.title==='상태별 연결 기록');assert.deepEqual(new Set(record.taskIds),new Set(['link-active-task','link-done-task']));
+  await click('data-action','minutes-edit',record.id);html=nodes.get('#editor').innerHTML;
+  const active=html.split('data-meeting-task-status="active"')[1].split('</details>')[0],done=html.split('data-meeting-task-status="completed"')[1].split('</details>')[0];
+  assert.match(active,/기존 업무에 연결/);assert.match(active,/name="task" value="link-active-task" checked/);assert.ok(!active.includes('value="link-done-task"'));
+  assert.match(done,/완료된 업무에 연결/);assert.match(done,/name="task" value="link-done-task" checked/);assert.ok(!done.includes('value="link-active-task"'));assert.ok(!html.includes('value="link-old-task"'));
+  await submit('minutes',{...record,meetingProjectSelection:'1',meetingProject:['link-open'],task:['link-active-task','link-done-task']},record.id);assert.deepEqual(new Set((await item('minutes',record.id)).taskIds),new Set(['link-active-task','link-done-task']));
+  await click('data-action','minutes-edit',old.id);html=nodes.get('#editor').innerHTML;assert.match(html,/type="hidden" name="meetingProject" value="link-closed"/);assert.ok(!html.includes('type="checkbox" name="meetingProject" value="link-closed"'));assert.match(html,/기존 연결 유지/);
+  await submit('minutes',{...old,meetingProjectSelection:'1',meetingProject:['link-closed'],task:['link-old-task']},old.id);assert.deepEqual((await item('minutes',old.id)).taskIds,['link-old-task']);await click('data-action','close');
+  const sections=new Map(['[data-intake]','[data-meeting-projects]','[data-meeting-tasks]','[data-meeting-date-status]'].map(k=>[k,{innerHTML:'',textContent:''}]));
+  const form={id:'minutes-form',values:{title:'완료 사업 후속',meetingDate:today(),body:'프로젝트: 완료 연결 프로젝트\n후속 업무\n- 정승재: 완료 연결 프로젝트 결과 정리하기',meetingProjectSelection:'1'},querySelector:s=>sections.get(s)};nodes.set('#minutes-form',form);
+  await listeners.input({target:{name:'body',value:form.values.body,closest:s=>s==='#minutes-form'||s==='form'?form:null}});
+  assert.ok(!sections.get('[data-meeting-projects]').innerHTML.includes('value="link-closed"'));assert.ok(!sections.get('[data-intake]').innerHTML.includes('value="link-closed"'));nodes.delete('#minutes-form');
+ });
  await pg.close();
 });
