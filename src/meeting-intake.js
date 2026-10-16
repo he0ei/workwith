@@ -1,4 +1,5 @@
 import {parseMeeting} from './model.js';
+import {compactTaskTitle} from './task-heading.js';
 export const taskTitleKey=title=>title.normalize('NFKC').toLocaleLowerCase('ko').replace(/[\s\p{P}]+/gu,'');
 export function matchMeetingProject(body,projects,title='',explicit=''){
  const base=value=>taskTitleKey(value).replace(/(?:프로젝트|건)$/u,'');
@@ -12,6 +13,6 @@ export function matchMeetingProject(body,projects,title='',explicit=''){
 export function meetingIntake(body,projects,tasks,projectId='',title=''){
  const parsed=parseMeeting(body),valid=projects.some(p=>p.id===projectId);
  const target=valid?projectId:matchMeetingProject(body,projects,title||parsed.meetingTitle,parsed.project.title),seen=new Set();
- const drafts=parsed.drafts.filter(d=>{const title=taskTitleKey(d.title),key=title+'|'+d.assignee;if(!title||seen.has(key))return false;seen.add(key);return true;}).slice(0,50).map(d=>({...d,duplicate:Boolean(target)&&tasks.some(t=>t.projectId===target&&taskTitleKey(t.title)===taskTitleKey(d.title)&&(!d.assignee||t.assignee===d.assignee||t.collaborators?.includes(d.assignee)))}));
+ const drafts=parsed.drafts.map(d=>({...d,title:compactTaskTitle(d.title)})).filter(d=>{const title=taskTitleKey(d.title),key=title+'|'+d.assignee;if(!title||seen.has(key))return false;seen.add(key);return true;}).slice(0,50).map(d=>({...d,duplicate:Boolean(target)&&tasks.some(t=>t.projectId===target&&taskTitleKey(compactTaskTitle(t.title))===taskTitleKey(d.title)&&(!d.assignee||t.assignee===d.assignee||t.collaborators?.includes(d.assignee)))}));
  return {drafts,projectId:target,title:parsed.meetingTitle,omitted:Math.max(0,seen.size-50)};
 }

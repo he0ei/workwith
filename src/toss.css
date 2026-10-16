@@ -313,3 +313,14 @@ footer { font-size:12px; }
 .meeting-draft details { font-size:14px; }.meeting-draft summary { cursor:pointer; color:var(--t-secondary); }
 .meeting-draft .prewrap { padding:12px; background:#f9fafb; border-radius:8px; }
 @media(max-width:600px){.meeting-intake{padding:16px;}.meeting-draft{padding:16px;}}
+
+.calendar-view-tabs { display:flex; gap:8px; margin-bottom:24px; }
+.calendar-view-tabs button[aria-pressed=true] { background:var(--t-accent); color:#fff; }
+.weekly-overview { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; align-items:start; }
+.weekly-panel { min-width:0; }.weekly-panel .section-head { align-items:flex-start; }.weekly-range { font-size:14px; color:var(--t-secondary); margin:8px 0 0; }
+.weekly-count { border-radius:12px; background:var(--t-blue-soft); color:var(--t-accent); padding:8px 12px; white-space:nowrap; font-weight:600; }
+.weekly-list { display:grid; gap:12px; }.weekly-card { display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding:20px; background:#f9fafb; border:1px solid transparent; text-align:left; width:100%; min-width:0; }
+.weekly-card:hover { background:#f2f6fc; border-color:#d9e5ff; }.weekly-card-heading { display:flex; width:100%; gap:12px; justify-content:space-between; align-items:flex-start; }
+.weekly-card-heading strong { font-size:17px; color:var(--t-text); overflow-wrap:anywhere; }.weekly-card-heading .priority { flex:none; font-size:13px; }
+.weekly-meta,.weekly-dates { font-size:14px; line-height:1.6; font-weight:400; color:var(--t-secondary); }.weekly-dates.red { color:var(--ds-danger); }.weekly-help { margin-bottom:24px; font-size:14px; }
+@media(max-width:760px){.weekly-overview{grid-template-columns:1fr;gap:0;}.weekly-card{padding:16px;}.calendar-view-tabs{flex-wrap:wrap;}.calendar-toolbar>div{flex-wrap:wrap;}.calendar-toolbar strong{font-size:17px;}}

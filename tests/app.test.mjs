@@ -1,3 +1,5 @@
+import {today} from '../src/model.js';
+import {weekRange,shiftDay} from '../src/weekly-calendar.js';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -192,6 +194,25 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   assert.equal(snapshot.state.projects.length,before.state.projects.length+1);assert.equal(snapshot.state.tasks.filter(t=>t.projectId===project.id).length,2);assert.equal(m.projectId,project.id);assert.equal(m.taskIds.length,2);
   await listeners.submit({preventDefault(){},target:{id:'minutes-form',values:{title:'추가 논의',body:'후속 업무\n- 정승재: 초안 작성하기\n- 최재희: 문구 작성하기',meetingDate:'2026-10-16',projectId:project.id,generateTasks:'on'}}});
   snapshot=await pg.repository.load();assert.equal(snapshot.state.tasks.filter(t=>t.projectId===project.id).length,3);assert.equal(snapshot.state.minutes.find(m=>m.title==='추가 논의').taskIds.length,1);assert.equal(snapshot.state.projects.length,before.state.projects.length+1);
+ });
+ await t.test('shared issue registration requires an existing project and saves concise headings',async()=>{
+  const values={title:'MYMAM 상세페이지를 기획한다.',visibility:'shared',assignee:'sj',projectId:'',status:'예정',priority:'보통',start:'',due:'',hours:'0',kpiId:'',url:'',note:'기획 방향을 함께 검토한다.'};
+  const before=await pg.repository.load();await click('data-action','task');await submit('task',values,'heading-task');
+  assert.deepEqual(await pg.repository.load(),before);assert.match(nodes.get('#form-error').textContent,/프로젝트/);assert.equal(nodes.get('#editor').open,true);
+  await submit('task',{...values,projectId:'gowoori'},'heading-task');const saved=await item('tasks','heading-task');
+  assert.equal(saved.title,'MYMAM 상세페이지 기획');assert.equal(saved.projectId,'gowoori');assert.equal(saved.note,values.note);
+ });
+ await t.test('weekly calendar automatically shows this and next week and preserves the monthly view',async()=>{
+  const range=weekRange(today()),next=shiftDay(range.start,7);
+  const values={visibility:'shared',assignee:'sj',projectId:'gowoori',status:'예정',priority:'보통',hours:'0',kpiId:'',url:'',note:''};
+  await click('data-action','task');await submit('task',{...values,title:'이번 주 일정 확인',start:range.start,due:range.end},'weekly-this');
+  await click('data-action','task');await submit('task',{...values,title:'다음 주 일정 확인',start:next,due:shiftDay(next,6)},'weekly-next');
+  await click('data-nav','calendar');assert.match(nodes.get('#app').innerHTML,/이번 주 할 일/);assert.match(nodes.get('#app').innerHTML,/다음 주 할 일/);assert.match(nodes.get('#app').innerHTML,/weekly-this/);assert.match(nodes.get('#app').innerHTML,/weekly-next/);
+  await click('data-action','calendar-month');assert.match(nodes.get('#app').innerHTML,/class="calendar"/);
+  await click('data-action','calendar-week');await click('data-action','week-next');assert.match(nodes.get('#app').innerHTML,/선택한 주 할 일/);await click('data-action','week-today');
+  await click('data-action','task','weekly-this');assert.equal(nodes.get('#editor').open,true);
+  await submit('task',{...values,title:'이번 주 일정 확인',start:next,due:shiftDay(next,6),reason:'다음 주로 조정'},'weekly-this');
+  assert.match(nodes.get('#app').innerHTML,/다음 주 할 일/);assert.equal((await item('tasks','weekly-this')).start,next);
  });
  await pg.close();
 });
