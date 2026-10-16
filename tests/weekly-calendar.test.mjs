@@ -53,3 +53,10 @@ test('priority orders every calendar queue and paused work stays below even low-
  const moved={tasks:input.map(t=>t.id==='z-high'?{...t,start:'2026-10-13',due:'2026-10-15'}:t)};
  assert.deepEqual(weeklyCalendar(moved,'jh','2026-10-16').current.tasks.map(t=>t.id),expected);assert.deepEqual(state,before);
 });
+test('today badge counts visible calendar intervals once, including completed work and excluding unscheduled or private team tasks',async()=>{
+ const {calendarDayTasks}=await import('../src/weekly-calendar.js');
+ const task=(id,start,due,extra={})=>({id,title:id,start,due,visibility:'shared',assignee:'sy',collaborators:[],priority:'보통',status:'진행 중',...extra});
+ const state={tasks:[task('span','2026-10-14','2026-10-18'),task('today','2026-10-16','2026-10-16'),task('due-only','','2026-10-16'),task('start-only','2026-10-16',''),task('done','2026-10-15','2026-10-16',{status:'완료'}),task('private-mine','2026-10-16','2026-10-16',{visibility:'private',owner:'sj',assignee:'sj'}),task('private-other','2026-10-16','2026-10-16',{visibility:'private',owner:'sy'}),task('undated','',''),task('past','2026-10-14','2026-10-15'),task('future','2026-10-17','2026-10-18')]};
+ assert.deepEqual(new Set(calendarDayTasks(state,'sj','2026-10-16').map(t=>t.id)),new Set(['span','today','due-only','start-only','done','private-mine']));
+ assert.deepEqual(new Set(calendarDayTasks(state,'sj','2026-10-17').map(t=>t.id)),new Set(['span','future']));
+});
