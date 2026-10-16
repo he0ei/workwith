@@ -21,7 +21,7 @@ export async function mutate(repository,body,actor){
   }
   if((batch||a.type.endsWith('.delete'))&&s.revision!==body.revision)throw new ApiError(409,'다른 변경이 반영되었습니다. 최신 데이터를 확인한 뒤 다시 시도하세요.');
   let next;try{next=batch?registerDrafts(s,a.value,actor):change(s,a,actor);}catch(err){throw new ApiError(400,err.message);}
-  next.revision=s.revision+1;const upserts=[],deletes=[];
+  next.history=[];next.revision=s.revision+1;const upserts=[],deletes=[];
   for(const e of entities){const old=new Map(s[e].map(x=>[x.id,x])),fresh=new Map(next[e].map(x=>[x.id,x]));
    for(const x of next[e])if(JSON.stringify(x)!==JSON.stringify(old.get(x.id)))upserts.push({entity:e,id:x.id,payload:x});
    for(const x of s[e])if(!fresh.has(x.id))deletes.push({entity:e,id:x.id});
