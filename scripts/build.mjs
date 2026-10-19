@@ -1,4 +1,5 @@
-import {mkdir,copyFile,cp,rm,writeFile,readFile} from 'node:fs/promises';
+import {mkdir,copyFile,cp,rm,writeFile,readFile,readdir} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import './build-functions.mjs';
 import './prepare-pdf.mjs';
 const url=process.env.SUPABASE_URL||'',key=process.env.SUPABASE_PUBLISHABLE_KEY||'';
@@ -14,3 +15,10 @@ let html=await readFile(new URL('../index.html',import.meta.url),'utf8');if(url)
 await writeFile(new URL('index.html',dist),html);await cp(new URL('../src/',import.meta.url),new URL('src/',dist),{recursive:true});
 await writeFile(new URL('src/config.js',dist),`export const SUPABASE_URL=${JSON.stringify(url)};\nexport const SUPABASE_KEY=${JSON.stringify(key)};\n`);
 await writeFile(new URL('.nojekyll',dist),'');console.log('Build complete: dist/ (GitHub Pages, static assets only)');
+
+// One version for the app and its module imports prevents mixed cached releases.
+const source=new URL('../src/',import.meta.url),files=(await readdir(source)).filter(name=>/\.(?:js|css)$/.test(name)).sort(),digest=createHash('sha256');
+for(const name of files)digest.update(name).update(await readFile(new URL(name,source)));
+const assetVersion=digest.update(url).update(key).digest('hex').slice(0,16);
+for(const name of files.filter(name=>name.endsWith('.js'))){const file=new URL('src/'+name,dist),text=await readFile(file,'utf8');await writeFile(file,text.replace(/((?:from\s*|import\s*\(\s*)['"])(\.[^'"]+\.(?:js|mjs))(['"])/g,`$1$2?v=${assetVersion}$3`));}
+const entry=new URL('index.html',dist);await writeFile(entry,(await readFile(entry,'utf8')).replace(/((?:src|href)="\.\/src\/[^"?]+\.(?:js|css))"/g,`$1?v=${assetVersion}"`));
