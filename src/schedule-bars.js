@@ -26,7 +26,7 @@ export function installScheduleDrag(root,{capture,save,error,canStart,announce})
  root.addEventListener('pointerdown',e=>{
   const bar=e.target.closest?.('[data-schedule-bar]');if(!bar||bar.closest?.('[data-month-week]')?.dataset.monthWeek||e.button!==0||!canStart()||active)return;
   const handle=e.target.closest('[data-resize]');if(handle?.disabled)return;
-  const snapshot=capture(bar.dataset.scheduleBar);if(!snapshot)return;
+  const snapshot=capture(bar.dataset.scheduleBar,bar.dataset.scheduleSegment);if(!snapshot)return;
   const board=bar.closest('[data-week-timeline]'),range={start:board.dataset.weekTimeline,end:shiftDay(board.dataset.weekTimeline,6)};
   active={bar,board,range,snapshot,mode:handle?.dataset.resize||'move',x:e.clientX,delta:0,next:null,moved:false,width:bar.getBoundingClientRect?.().width||0,pointerId:e.pointerId};
   bar.setPointerCapture?.(e.pointerId);
@@ -58,7 +58,7 @@ export function installScheduleDrag(root,{capture,save,error,canStart,announce})
   if(active||e.target.closest?.('[data-status-indicator]'))return;
   const bar=e.target.closest?.('[data-schedule-bar]');if(!bar||bar.closest?.('[data-month-week]')?.dataset.monthWeek||!['ArrowLeft','ArrowRight'].includes(e.key)||!canStart())return;
   const handle=e.target.closest('[data-resize]');if(handle?.disabled)return;
-  e.preventDefault();const snapshot=capture(bar.dataset.scheduleBar);if(!snapshot)return;
+  e.preventDefault();const snapshot=capture(bar.dataset.scheduleBar,bar.dataset.scheduleSegment);if(!snapshot)return;
   try{await apply(snapshot,adjustSchedule(snapshot.task,handle?.dataset.resize||'move',e.key==='ArrowLeft'?-1:1),handle?.dataset.resize||'move');}catch(err){error(err);}
  });
  root.addEventListener('click',e=>{const bar=e.target.closest?.('[data-schedule-bar]');if(bar&&suppress?.id===bar.dataset.scheduleBar&&Date.now()<suppress.until){e.preventDefault();e.stopImmediatePropagation();return;}if(e.target.closest?.('[data-resize]')){e.preventDefault();e.stopImmediatePropagation();}},true);

@@ -1,3 +1,4 @@
+import {continueSchedule} from './task-schedules.js';
 import {shiftDay} from './weekly-calendar.js';
 export function dropDate(board,x){
  const rect=board.getBoundingClientRect();if(rect.width<=0||x<rect.left||x>=rect.right)return '';
@@ -12,7 +13,7 @@ export function installUnscheduledDrag(root,{capture,save,error,canStart,announc
  root.addEventListener('pointerdown',e=>{
   const source=e.target.closest?.('[data-plan-task]');if(!source||e.button!==0||active||!canStart())return;
   if(e.target.closest('input,select'))return;
-  const snapshot=capture(source.dataset.planTask);if(!snapshot||snapshot.task.start||snapshot.task.due)return;
+  const snapshot=capture(source.dataset.planTask);if(!snapshot||(!source.dataset.continueTask&&(snapshot.task.start||snapshot.task.due))||snapshot.task.status==='완료')return;
   active={snapshot,source,x:e.clientX,y:e.clientY,pointerId:e.pointerId,moved:false};source.setPointerCapture?.(e.pointerId);
  });
  root.addEventListener('pointermove',e=>{
@@ -22,12 +23,12 @@ export function installUnscheduledDrag(root,{capture,save,error,canStart,announc
   if(!ghost&&root.body&&active.source.cloneNode){ghost=active.source.cloneNode(true);ghost.removeAttribute('data-plan-task');ghost.removeAttribute('data-action');ghost.classList.add('planning-ghost');ghost.inert=true;ghost.setAttribute('aria-hidden','true');root.body.append(ghost);}
   if(ghost)ghost.style.transform=`translate3d(${e.clientX+14}px,${e.clientY+14}px,0)`;if(e.cancelable)e.preventDefault();
   clearHover();const {board,date}=destination(e);if(!date){announce('원하는 날짜에 놓아 주세요.');return;}
-  hover=board.querySelector('[data-plan-date="'+date+'"]');hover?.classList.add('plan-drop-target');announce(date+'에 일정 배정 · 놓으면 저장');
+  hover=board.querySelector('[data-plan-date="'+date+'"]');hover?.classList.add('plan-drop-target');announce(date+(active.source.dataset.continueTask?'에 추가 진행 · 기존 일정 유지 · 놓으면 저장':'에 일정 배정 · 놓으면 저장'));
  });
  root.addEventListener('pointerup',async e=>{
   if(!active||e.pointerId!==active.pointerId)return;const a=active,{date,board}=destination(e);
   if(a.moved)suppress={id:a.snapshot.task.id,until:Date.now()+600};clear();if(!a.moved||!date)return;
-  try{await save(a.snapshot,{start:date,due:date},(board?.dataset.monthWeek?'월간':'주간')+' 보드에서 일정 미지정 업무 배정 · '+date,'move');}catch(err){error(err);}
+  try{const continuing=Boolean(a.source.dataset.continueTask),dates=continuing?continueSchedule(a.snapshot.task,date,crypto.randomUUID()):{start:date,due:date};await save(a.snapshot,dates,(board?.dataset.monthWeek?'월간':'주간')+' 보드에서 '+(continuing?'기존 일정 유지 · 추가 진행 배정':'일정 미지정 업무 배정')+' · '+date,continuing?'continue':'move');}catch(err){error(err);}
  });
  const cancel=()=>{if(active?.moved)suppress={id:active.snapshot.task.id,until:Date.now()+600};clear();};
  root.addEventListener('pointercancel',cancel);root.addEventListener('visibilitychange',cancel);root.addEventListener('lostpointercapture',e=>{if(active?.pointerId===e.pointerId)cancel();});

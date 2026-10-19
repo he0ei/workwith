@@ -1,3 +1,4 @@
+import {overlapsSchedule} from './task-schedules.js';
 import {shiftDay,weekRange,calendarOrder} from './weekly-calendar.js';
 import {adjustSchedule,daysBetween,scheduleReason} from './schedule-bars.js';
 import {dropDate} from './unscheduled-drag.js';
@@ -7,7 +8,7 @@ export function monthWeeks(month,tasks){
  const [year,m]=month.split('-').map(Number),last=new Date(Date.UTC(year,m,0)).toISOString().slice(0,10),weeks=[];
  for(let start=weekRange(month+'-01').start;start<=last;start=shiftDay(start,7)){
   const end=shiftDay(start,6);
-  weeks.push({start,end,tasks:tasks.filter(t=>{const a=t.start||t.due,b=t.due||t.start;return a&&b&&a<=b&&a<=end&&b>=start;}).sort(calendarOrder)});
+  weeks.push({start,end,tasks:tasks.filter(t=>overlapsSchedule(t,{start,end})).sort(calendarOrder)});
  }
  return weeks;
 }
@@ -27,7 +28,7 @@ export function installMonthDrag(root,{capture,save,error,canStart,announce}){
  root.addEventListener('pointerdown',e=>{
   const bar=e.target.closest?.('[data-schedule-bar]'),board=bar?.closest?.('[data-month-week]');if(!board||e.button!==0||active||pending||!canStart())return;
   const handle=e.target.closest('[data-resize]');if(handle?.disabled)return;
-  const snapshot=capture(bar.dataset.scheduleBar),anchor=dropDate(board,e.clientX);if(!snapshot||!anchor)return;
+  const snapshot=capture(bar.dataset.scheduleBar,bar.dataset.scheduleSegment),anchor=dropDate(board,e.clientX);if(!snapshot||!anchor)return;
   active={bar,snapshot,anchor,mode:handle?.dataset.resize||'move',x:e.clientX,y:e.clientY,pointerId:e.pointerId,moved:false};bar.setPointerCapture?.(e.pointerId);
  });
  root.addEventListener('pointermove',e=>{
@@ -52,7 +53,7 @@ export function installMonthDrag(root,{capture,save,error,canStart,announce}){
   const delta={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key],bar=e.target.closest?.('[data-schedule-bar]');
   if(!delta||!bar?.closest?.('[data-month-week]')||active||pending||!canStart())return;
   const handle=e.target.closest('[data-resize]');if(handle?.disabled)return;
-  const snapshot=capture(bar.dataset.scheduleBar);if(!snapshot)return;e.preventDefault();
+  const snapshot=capture(bar.dataset.scheduleBar,bar.dataset.scheduleSegment);if(!snapshot)return;e.preventDefault();
   await apply(snapshot,adjustSchedule(snapshot.task,handle?.dataset.resize||'move',delta),handle?.dataset.resize||'move',bar);
  });
  root.addEventListener('click',e=>{const bar=e.target.closest?.('[data-schedule-bar]');if(bar&&suppress?.id===bar.dataset.scheduleBar&&Date.now()<suppress.until){e.preventDefault();e.stopImmediatePropagation();}},true);

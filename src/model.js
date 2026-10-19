@@ -39,6 +39,8 @@ export function validate(state){
   required(str(t.title,200)&&t.title.trim()&&str(t.note)&&userOK(t.assignee)&&userOK(t.owner)&&t.owner&&['shared','private'].includes(t.visibility)&&STATUSES.includes(taskStatus(t.status))&&PRIORITIES.includes(t.priority),'업무 값 오류');
   required((!t.projectId||project(t.projectId))&&(t.visibility!=='private'||(!t.projectId&&t.assignee===t.owner)),'개인 업무는 소유자에게만 배정하며 프로젝트에 연결할 수 없습니다.');
   required(dateOK(t.start)&&dateOK(t.due)&&dateOK(t.completedAt)&&(!t.start||!t.due||t.start<=t.due)&&Number.isFinite(t.hours)&&t.hours>=0&&t.hours<=10000,'업무 일정 또는 예상 시간 오류');
+  const slots=t.scheduleSlots??[];
+  required(Array.isArray(slots)&&slots.length<=104&&new Set(slots.map(s=>s?.id)).size===slots.length&&slots.every(s=>s&&str(s.id,100)&&s.id&&s.start&&s.due&&dateOK(s.start)&&dateOK(s.due)&&s.start<=s.due),'추가 진행 일정 형식 오류');
   required((t.status==='완료')===Boolean(t.completedAt),'완료일과 상태가 일치하지 않습니다.');
   required(str(t.url,2000)&&(!t.url||safeURL(t.url))&&(!t.kpiId||state.kpis.some(k=>k.id===t.kpiId&&k.projectId===t.projectId)),'업무 링크 또는 KPI 연결 오류');
   required(Array.isArray(t.dependencies)&&new Set(t.dependencies).size===t.dependencies.length,'의존 업무 형식 오류');
@@ -70,7 +72,8 @@ export function change(state,action,actor){
   required(!old||old.owner===v.owner,'업무 소유자는 변경할 수 없습니다.');
   const t={...v,status:taskStatus(v.status),collaborators:v.collaborators??old?.collaborators??[],completedAt:v.status==='완료'?(old?.completedAt||today()):''};
   if(v.attachment===undefined&&old?.attachment)t.attachment=old.attachment;
-  const datesChanged=old&&(old.start!==t.start||old.due!==t.due);
+  if(v.scheduleSlots===undefined&&old?.scheduleSlots)t.scheduleSlots=structuredClone(old.scheduleSlots);
+  const datesChanged=old&&(old.start!==t.start||old.due!==t.due||JSON.stringify(old.scheduleSlots||[])!==JSON.stringify(t.scheduleSlots||[]));
   required(!datesChanged||action.reason?.trim(),'일정 변경 사유를 입력하세요.');
   if(t.status==='완료')required(t.dependencies.every(id=>s.tasks.find(x=>x.id===id)?.status==='완료'),'선행 업무를 완료한 후 완료 처리하세요.');
   if(old)s.tasks[s.tasks.indexOf(old)]=t;else s.tasks.push(t);
