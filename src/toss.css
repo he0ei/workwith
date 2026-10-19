@@ -825,7 +825,7 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
 .is-current .work-week-header h3{color:#2563ca}
 .work-week-header p{font-size:12px;color:#87919f;margin:5px 0 0}
 .work-week-header>small{font-size:11px;color:#87919f;white-space:nowrap}
-.work-week-list{padding:0 9px 10px;display:flex;flex-direction:column;gap:8px;max-height:560px;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-width:thin}
+.work-week-list{padding:0 9px 10px;display:flex;flex-direction:column;gap:10px;max-height:none;overflow:visible}
 .week-work-card{min-width:0;background:#fff;border:1px solid #e9edf3;border-radius:12px;box-shadow:0 1px 2px #162c4b03;overflow:hidden}
 .week-card-open{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;min-height:0;padding:13px;text-align:left;color:#333d4b;background:transparent;border:0;border-radius:12px;box-shadow:none;font-weight:400;cursor:pointer}
 .week-card-open:hover{background:#fcfdff;box-shadow:inset 0 0 0 1px #bad2f5}
@@ -854,7 +854,7 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
 .week-extra{min-width:0;border:1px solid var(--work-line);border-radius:12px;background:#fff}
 .week-extra>summary{padding:12px 14px;font-size:13px;font-weight:600;color:#6b7684;cursor:pointer}
 .week-extra>summary span{font-weight:400;color:#87919f;margin-left:5px}
-.week-extra-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;padding:0 10px 10px;max-height:320px;overflow:auto}
+.week-extra-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;padding:0 10px 10px;max-height:none;overflow:visible}
 .week-extra .planning-card{margin:0;width:auto;min-width:0}
 .work-month{padding-top:4px;min-width:0}
 .work-month-heading{margin-bottom:12px;gap:10px}
@@ -916,7 +916,7 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
  .week-card-bottom .task-status-indicator{font-size:12px}
  .week-card-bottom .calendar-avatar{font-size:11px;min-width:30px;height:20px;line-height:20px}
  .week-extra-lists{grid-template-columns:1fr;margin:12px 0 26px}
- .week-extra-cards{grid-template-columns:1fr;max-height:380px}
+ .week-extra-cards{grid-template-columns:1fr;max-height:none}
  .desktop-month{display:none}
  .mobile-month{display:block}
  .work-month-heading{flex-wrap:wrap;align-items:center;gap:10px}
@@ -949,7 +949,7 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
 .week-card-bottom .calendar-status-people{height:auto;min-height:20px;align-items:center}
 .week-card-bottom .calendar-person-line{height:auto;min-height:20px;overflow:visible;align-items:center}
 .week-anchor-controls label{flex-direction:row;margin:0}
-.work-week-list{max-height:480px}
+.work-week-list{max-height:none;overflow:visible}
 @media(max-width:700px){.work-week-list{max-height:none}}
 /* A compact mobile shell leaves the first task above the fold. */
 @media(max-width:700px){
@@ -984,3 +984,39 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
 .week-card-heading .task-priority-chip{flex:0 0 auto;margin-top:2px;font-size:10px}
 .week-card-project .project-chip{max-width:100%}
 @media(max-width:700px){.compact-day.is-today>span{display:grid;place-items:center;width:23px;height:23px;border-radius:8px;background:#3182f6;color:#fff;font-weight:600}}
+
+/* Put full participant names before the work, with natural document scrolling. */
+.week-assignees{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;width:100%;min-width:0;margin-bottom:2px;text-align:left}
+.week-assignee-label{font-size:12px;font-weight:500;color:#87919f}
+.week-assignee{display:inline-flex;align-items:center;gap:7px;font-size:17px;line-height:1.6;font-weight:650;color:#333d4b;white-space:nowrap}
+.week-assignee-avatar{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:30px;height:30px;border-radius:10px;font-size:13px;font-weight:600}
+.week-assignee-unassigned{font-size:16px;color:#6b7684;font-weight:500}
+.week-card-open{padding:16px;gap:10px}
+.week-card-title{display:block;-webkit-line-clamp:unset;overflow:visible;font-size:16px;line-height:1.6}
+.week-card-description{display:block;-webkit-line-clamp:unset;overflow:visible;font-size:14px;line-height:1.85;color:#596574}
+.week-card-dates{font-size:13px;line-height:1.6}
+.week-card-bottom{gap:8px;padding-top:10px}
+.week-card-bottom .task-status-indicator{font-size:13px}
+.week-card-bottom .reviewer-chip{height:auto;padding:3px 6px;font-size:12px;line-height:1.5;white-space:normal;max-width:100%}
+.week-meeting-count,.week-file-count{font-size:12px}
+.task-meta .person-chip{font-size:16px}
+.task-editor .task-edit-intro{gap:12px}
+.task-editor .task-edit-intro input[name=title]{min-height:46px;font-size:16px;padding:10px 12px}
+.task-editor .task-description textarea{min-height:170px;height:170px;padding:12px 0;font-size:16px;line-height:1.85;resize:vertical}
+.task-editor .collaborator-options{gap:9px}
+.task-editor .collaborator-options legend{font-size:14px;margin-bottom:10px}
+.task-editor .person-choice>span{min-height:44px;padding:7px 12px 7px 7px;gap:8px;font-size:15px;line-height:1.5;border-radius:10px}
+.task-editor .person-choice .avatar{width:30px;height:30px;font-size:13px}
+.task-editor .reviewer-options .person-choice>span{min-height:40px;font-size:14px;padding:7px 12px}
+@media(max-width:700px){
+ .week-assignee{font-size:18px}
+ .week-assignee-avatar{width:32px;height:32px}
+ .week-card-open{padding:16px;gap:10px}
+ .week-card-title{font-size:17px;-webkit-line-clamp:unset}
+ .week-card-description{font-size:15px;line-height:1.85;-webkit-line-clamp:unset}
+ .week-card-dates{font-size:13px}
+ .task-editor .task-description textarea{min-height:190px;height:190px}
+ .task-editor .collaborator-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .task-editor .collaborator-options legend{grid-column:1/-1}
+ .task-editor .person-choice>span{width:100%;box-sizing:border-box}
+}
