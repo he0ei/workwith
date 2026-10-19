@@ -10,7 +10,7 @@ export async function verifyWorkspaceLink(authorization,hash){
 export async function handleWorkspaceLink(request,env,fetcher,headers){
  const reply=(body,status=200)=>Response.json(body,{status,headers:{...headers,'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
  try{
-  if(!await verifyWorkspaceLink(request.headers.get('Authorization'),env.WORKSPACE_LINK_SHA256))throw new ApiError(401,'유효한 비공개 접속 링크가 필요합니다.');
+  if(env.WORKSPACE_PUBLIC_ACCESS!==true&&!await verifyWorkspaceLink(request.headers.get('Authorization'),env.WORKSPACE_LINK_SHA256))throw new ApiError(401,'유효한 비공개 접속 링크가 필요합니다.');
   if(!env.SUPABASE_URL||!env.SUPABASE_SERVICE_ROLE_KEY)throw new ApiError(503,'공유 저장소 설정을 확인해 주세요.');
   if(!request.headers.get('Content-Type')?.startsWith('application/json'))throw new ApiError(415,'JSON 요청만 허용합니다.');
   // Bound the streamed body before parsing; a 5 MiB attachment expands under base64.

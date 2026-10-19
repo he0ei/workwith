@@ -10,3 +10,11 @@ test('shared-link UI has no login, password, settings or private-task choices; a
 test('without a valid private link the web app shows an access notice and never a password form',async()=>{
  const app={innerHTML:''};globalThis.document={querySelector:s=>s==='#app'?app:null,addEventListener(){}};globalThis.window={addEventListener(){}};globalThis.location={protocol:'https:',hash:''};await start({linkAccess:true,read:async()=>{throw Error('팀의 비공개 접속 링크로 열어 주세요.');}});assert.match(app.innerHTML,/비공개 접속 링크/);assert.ok(!app.innerHTML.includes('<form'));assert.ok(!app.innerHTML.includes('password'));
 });
+test('public workspace errors offer retry without login, private-link or key instructions',async()=>{
+ const nodes=new Map(['#app','#editor','#toast','#form-error','#sync-label'].map(id=>[id,{innerHTML:'',textContent:'',open:false,classList:{add(){},remove(){}}}])),events={};
+ globalThis.document={hidden:false,querySelector:s=>nodes.get(s),addEventListener:(name,fn)=>{const old=events[name];events[name]=old?e=>Promise.all([old(e),fn(e)]):fn;}};globalThis.window={addEventListener(){}};globalThis.location={protocol:'https:',hash:''};globalThis.setTimeout=()=>1;globalThis.clearTimeout=()=>{};
+ let fail=true;await start({linkAccess:true,publicAccess:true,read:async()=>{if(fail)throw Error('유효한 비공개 접속 링크가 필요합니다.');return {state:empty(),versions:{},user:'jh'};}});
+ let html=nodes.get('#app').innerHTML;assert.match(html,/다시 연결/);for(const text of ['비공개','접속키','초대','로그인'])assert.ok(!html.includes(text));
+ fail=false;await events.click({target:{closest:s=>s==='[data-action]'?{dataset:{action:'retry-workspace'}}:null}});
+ html=nodes.get('#app').innerHTML;assert.match(html,/팀 캘린더/);assert.ok(!html.includes('다시 연결'));
+});
