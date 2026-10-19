@@ -317,5 +317,18 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await submit('task',{...values,reviewer:['ceo']},'reviewer-ui-task');assert.deepEqual((await item('tasks','reviewer-ui-task')).reviewers,['ceo']);
   await click('data-action','task','reviewer-ui-task');await submit('task',{...values,reviewer:[]},'reviewer-ui-task');assert.deepEqual((await item('tasks','reviewer-ui-task')).reviewers,[]);
  });
+ await t.test('delivery paste creates one project-linked issue and preserves original archive, then links subsequent delivery without duplicates',async()=>{
+  await click('data-action','project');await submit('project',{title:'MYMAM',goal:'',owner:'sj',start:'',due:''},'delivery-project');
+  const body='마이맘 랜딩페이지 작업본 전달드립니다.\n\n확인용 미리보기: https://example.test/preview\n연결이 필요한 부분\n1. 접수 API 연결\n2. 주소검색 연결\n3. 이미지 경로 수정';
+  const create=values=>listeners.submit({preventDefault(){},target:{id:'minutes-form',values}});
+  await click('data-nav','minutes');const before=await pg.repository.load();
+  await create({title:'',body,meetingDate:today(),projectId:'',generateTasks:'on'});
+  const after=await pg.repository.load(),record=after.state.minutes.find(m=>m.body===body),task=after.state.tasks.find(t=>t.title==='MY MAM 랜딩페이지 제작');
+  assert.ok(record);assert.ok(task);assert.equal(after.state.tasks.length,before.state.tasks.length+1);assert.equal(after.state.projects.length,before.state.projects.length);
+  assert.equal(task.projectId,'delivery-project');assert.equal(task.assignee,'');assert.equal(task.due,'');assert.deepEqual(record.taskIds,[task.id]);assert.equal(record.body,body);
+  await create({title:'후속 전달 기록',body,meetingDate:today(),projectId:'',generateTasks:'on'});
+  const repeated=await pg.repository.load(),followup=repeated.state.minutes.find(m=>m.title==='후속 전달 기록');assert.equal(repeated.state.tasks.length,after.state.tasks.length);assert.deepEqual(followup.taskIds,[task.id]);assert.equal(followup.body,body);
+  await click('data-action','task',task.id);assert.match(nodes.get('#editor').innerHTML,/minute-summary/);assert.match(nodes.get('#editor').innerHTML,/minute-date/);assert.match(nodes.get('#editor').innerHTML,/후속 전달 기록/);await click('data-action','close');
+ });
  await pg.close();
 });
