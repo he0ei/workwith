@@ -13,3 +13,11 @@ test('plain links and malformed fragments cannot request protected data; shared 
  const saved=storage();saved.setItem('workwith-shared-link','a'.repeat(43));const malformed=new LinkStore(()=>{calls++;},saved,config,{...page,hash:'#access=bad'},history);await assert.rejects(malformed.read(),e=>e.status===401);assert.equal(calls,0);
  const denied=new LinkStore(async()=>Response.json({error:'폐기된 링크'},{status:401}),storage(),config,{...page,hash:'#access='+'b'.repeat(43)},history);await assert.rejects(denied.read(),e=>e.status===401);
 });
+test('an already-open plain page can accept or replace its private link without reloading',async()=>{
+ const saved=storage(),page={hash:'',pathname:'/workwith/',search:''},history={replaceState(){}},config={url:'https://test.supabase.co',key:'public-key'};
+ const used=[];const store=new LinkStore(async(_url,o)=>{used.push(o.headers.Authorization);return Response.json({});},saved,config,page,history);
+ await assert.rejects(store.read(),e=>e.status===401);assert.equal(store.importLink(page,history),false);
+ page.hash='#access='+'a'.repeat(43);assert.equal(store.importLink(page,history),true);await store.read();
+ page.hash='#access='+'b'.repeat(43);store.importLink(page,history);await store.read();assert.deepEqual(used,['Bearer '+'a'.repeat(43),'Bearer '+'b'.repeat(43)]);
+ page.hash='#access=';store.importLink(page,history);await assert.rejects(store.read(),e=>e.status===401);
+});

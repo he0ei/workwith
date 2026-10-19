@@ -274,6 +274,7 @@ function passwordUpdateScreen(){
  $('#app').innerHTML=`<main class="auth-page"><section class="panel auth-panel"><h1>새 비밀번호 설정</h1><p class="muted">복구 링크의 계정을 확인했습니다. 새 비밀번호를 직접 입력하세요.</p><form id="password-update-form">${field('새 비밀번호','password','','password','required minlength="8" maxlength="128" autocomplete="new-password"')}${field('새 비밀번호 확인','confirmPassword','','password','required minlength="8" maxlength="128" autocomplete="new-password"')}<p id="login-error" role="alert"></p><button class="primary" type="submit">새 비밀번호 저장</button></form></section></main>`;
 }
 function linkAccessScreen(message){$('#app').innerHTML=`<main class="auth-page"><section class="panel auth-panel"><h1>비공개 팀 워크스페이스</h1><p>${esc(message||'팀의 비공개 접속 링크로 열어 주세요.')}</p><p class="muted">링크를 가진 사람은 공유 업무와 파일을 열고 수정할 수 있습니다.</p></section></main>`;}
+window.addEventListener('hashchange',async()=>{if(!store.linkAccess||store.preview||!store.importLink?.())return;try{accept(await store.read());render();schedule();}catch(err){clearTimeout(syncTimer);state=null;linkAccessScreen(err.message);}});
 async function boot(){
  if(store.linkAccess){try{accept(await store.read());render();schedule();}catch(err){linkAccessScreen(err.message);}return;}
  if(previewMode){accept(await store.read());render();return;}
