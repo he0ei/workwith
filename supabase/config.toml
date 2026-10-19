@@ -1,5 +1,5 @@
 project_id = "workwith"
 [functions.workspace]
-# The handler verifies the private-link token against its server-side SHA-256 hash.
-# Required for modern publishable keys; never rely on decoding an unverified JWT.
+# Public workspace mode is explicitly enabled by the production function entrypoint.
+# Requests do not require a login or invitation token; server-side validation remains.
 verify_jwt = false

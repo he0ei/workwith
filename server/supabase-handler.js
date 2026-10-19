@@ -8,7 +8,7 @@ export async function handle(request,env,fetcher=fetch){
  if(origin){headers['Access-Control-Allow-Origin']=origin;headers['Access-Control-Allow-Headers']='authorization, apikey, content-type, x-client-info';headers['Access-Control-Allow-Methods']='POST, OPTIONS';}
  if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
  if(request.method!=='POST')return json({error:'POST 요청만 허용합니다.'},405,headers);
- if(env.WORKSPACE_LINK_SHA256!==undefined)return handleWorkspaceLink(request,env,fetcher,headers);
+ if(env.WORKSPACE_PUBLIC_ACCESS===true||env.WORKSPACE_LINK_SHA256!==undefined)return handleWorkspaceLink(request,env,fetcher,headers);
  try{
   const url=env.SUPABASE_URL,service=env.SUPABASE_SERVICE_ROLE_KEY;
   if(!url||!service)throw new ApiError(503,'프로젝트 설정을 확인해야 합니다.');

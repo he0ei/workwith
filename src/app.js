@@ -8,7 +8,7 @@ import {compactTaskTitle} from './task-heading.js';
 import {calendarTasks,calendarDayTasks,weeklyCalendar,weekRange,shiftDay,weekDays} from './weekly-calendar.js';
 import {icon} from './icons.js';
 import {SharedStore} from './shared-store.js';
-import {LinkStore} from './link-store.js';
+import {WorkspaceStore} from './workspace-store.js';
 import {DesignPreviewStore} from './preview-store.js';
 import {FieldError,validateEditor,clearFieldErrors,showFieldError,clearFieldError} from './form-validation.js';
 import {installUnscheduledDrag} from './unscheduled-drag.js';
@@ -17,7 +17,7 @@ import {monthWeeks,installMonthDrag} from './monthly-calendar.js';
 import {installBoardDrag} from './board-drag.js';
 export async function start(store=null){
 const previewMode=location.protocol==='file:';
-store=previewMode?new DesignPreviewStore():(store||new LinkStore());
+store=previewMode?new DesignPreviewStore():(store||new WorkspaceStore());
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let filePreview,projectColorMap=new Map();
 const openPreview=async attachment=>{filePreview??=createFilePreview($('#file-preview'),{load:a=>store.downloadAttachment(a)});await filePreview.show(attachment);};
@@ -203,6 +203,7 @@ function updateTaskVisibility(){const form=$('#edit-form');if(!form?.querySelect
 function navigate(v){recentStatusIds.clear();view=v;filter='all';query='';assignee='';render();}
 
 document.addEventListener('click',async e=>{if(artifactSaving){toast('첨부 파일을 저장 중입니다. 잠시 기다려 주세요.');return;}if(e.target.closest('[data-task-card]')&&e.target.closest('select,input,textarea,label,a'))return;const n=e.target.closest('[data-nav]');if(n){navigate(n.dataset.nav);return;}const f=e.target.closest('[data-filter]');if(f){recentStatusIds.clear();filter=f.dataset.filter;render();return;}const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action,id=b.dataset.id;try{
+ if(a==='retry-workspace'){await boot();return;}
  if(a==='calendar-info-close'){const info=$('.calendar-info');if(info)info.open=false;return;}
  if(a==='task-section'){setTaskTab(id);return;}
  if(a==='task-minutes'){showTaskMinutes(id);return;}
@@ -274,7 +275,7 @@ function firstPasswordScreen(){
 function passwordUpdateScreen(){
  $('#app').innerHTML=`<main class="auth-page"><section class="panel auth-panel"><h1>새 비밀번호 설정</h1><p class="muted">복구 링크의 계정을 확인했습니다. 새 비밀번호를 직접 입력하세요.</p><form id="password-update-form">${field('새 비밀번호','password','','password','required minlength="8" maxlength="128" autocomplete="new-password"')}${field('새 비밀번호 확인','confirmPassword','','password','required minlength="8" maxlength="128" autocomplete="new-password"')}<p id="login-error" role="alert"></p><button class="primary" type="submit">새 비밀번호 저장</button></form></section></main>`;
 }
-function linkAccessScreen(message){$('#app').innerHTML=`<main class="auth-page"><section class="panel auth-panel"><h1>비공개 팀 워크스페이스</h1><p>${esc(message||'팀의 비공개 접속 링크로 열어 주세요.')}</p><p class="muted">링크를 가진 사람은 공유 업무와 파일을 열고 수정할 수 있습니다.</p></section></main>`;}
+function linkAccessScreen(message){const text=store.publicAccess?'공유 저장소에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.':message||'공유 저장소 연결을 확인해 주세요.';$('#app').innerHTML=`<main class="auth-page"><section class="panel auth-panel"><h1>팀 워크스페이스</h1><p role="alert">${esc(text)}</p>${store.publicAccess?button('retry-workspace','다시 연결','','primary'):''}</section></main>`;}
 window.addEventListener('hashchange',async()=>{if(!store.linkAccess||store.preview||!store.importLink?.())return;try{accept(await store.read());render();schedule();}catch(err){clearTimeout(syncTimer);state=null;linkAccessScreen(err.message);}});
 async function boot(){
  if(store.linkAccess){try{accept(await store.read());render();schedule();}catch(err){linkAccessScreen(err.message);}return;}
