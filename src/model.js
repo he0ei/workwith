@@ -18,6 +18,7 @@ export function safeURL(value){if(!value)return '';try{const u=new URL(value);re
 export const visible=(task,user)=>task.visibility==='shared'||task.owner===user;
 export const visibleTasks=(state,user)=>state.tasks.filter(t=>visible(t,user));
 export const taskPeople=task=>USERS.filter(u=>u.id===task.assignee||(task.visibility==='shared'&&(task.collaborators||[]).includes(u.id))).map(u=>u.id);
+export const taskReviewers=task=>USERS.filter(u=>(task.reviewers||[]).includes(u.id)).map(u=>u.id);
 export const participates=(task,user)=>taskPeople(task).includes(user);
 export function validate(state){
  required(state&&state.version===1&&Number.isInteger(state.revision)&&state.revision>=0,'지원하지 않는 저장 데이터 형식입니다.');
@@ -36,6 +37,9 @@ export function validate(state){
   const collaborators=t.collaborators??[];
   required(Array.isArray(collaborators)&&collaborators.length<=USERS.length&&new Set(collaborators).size===collaborators.length&&collaborators.every(id=>id&&userOK(id)&&id!==t.assignee),'협업자 값 오류');
   required(t.visibility!=='private'||collaborators.length===0,'개인 업무에는 협업자를 지정할 수 없습니다.');
+  const reviewers=t.reviewers??[];
+  required(Array.isArray(reviewers)&&reviewers.length<=USERS.length&&new Set(reviewers).size===reviewers.length&&reviewers.every(id=>id&&userOK(id)&&!taskPeople(t).includes(id)),'검토자는 담당자와 다른 팀원으로 선택하세요.');
+  required(t.visibility!=='private'||reviewers.length===0,'개인 업무에는 검토자를 지정할 수 없습니다.');
   required(str(t.title,200)&&t.title.trim()&&str(t.note)&&userOK(t.assignee)&&userOK(t.owner)&&t.owner&&['shared','private'].includes(t.visibility)&&STATUSES.includes(taskStatus(t.status))&&PRIORITIES.includes(t.priority),'업무 값 오류');
   required((!t.projectId||project(t.projectId))&&(t.visibility!=='private'||(!t.projectId&&t.assignee===t.owner)),'개인 업무는 소유자에게만 배정하며 프로젝트에 연결할 수 없습니다.');
   required(dateOK(t.start)&&dateOK(t.due)&&dateOK(t.completedAt)&&(!t.start||!t.due||t.start<=t.due)&&Number.isFinite(t.hours)&&t.hours>=0&&t.hours<=10000,'업무 일정 또는 예상 시간 오류');
@@ -70,7 +74,7 @@ export function change(state,action,actor){
   const old=s.tasks.find(t=>t.id===v.id);required(!old||visible(old,actor),'다른 사용자의 개인 업무를 수정할 수 없습니다.');
   required(v.visibility!=='private'||v.owner===actor,'다른 사용자의 개인 업무를 생성할 수 없습니다.');
   required(!old||old.owner===v.owner,'업무 소유자는 변경할 수 없습니다.');
-  const t={...v,status:taskStatus(v.status),collaborators:v.collaborators??old?.collaborators??[],completedAt:v.status==='완료'?(old?.completedAt||today()):''};
+  const t={...v,status:taskStatus(v.status),collaborators:v.collaborators??old?.collaborators??[],reviewers:v.reviewers??old?.reviewers??[],completedAt:v.status==='완료'?(old?.completedAt||today()):''};
   if(v.attachment===undefined&&old?.attachment)t.attachment=old.attachment;
   if(v.scheduleSlots===undefined&&old?.scheduleSlots)t.scheduleSlots=structuredClone(old.scheduleSlots);
   const datesChanged=old&&(old.start!==t.start||old.due!==t.due||JSON.stringify(old.scheduleSlots||[])!==JSON.stringify(t.scheduleSlots||[]));
