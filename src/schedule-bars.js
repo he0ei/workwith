@@ -24,7 +24,7 @@ export function installScheduleDrag(root,{capture,save,error,canStart,announce})
  function clear(restore=true){if(!active)return;const a=active;active=null;if(restore)paint(a.bar,a.snapshot.task,a.range);if(a.bar.style){a.bar.style.transform='';a.bar.style.width='';}a.bar.classList.remove('schedule-dragging');if(a.bar.hasPointerCapture?.(a.pointerId))a.bar.releasePointerCapture(a.pointerId);}
  async function apply(snapshot,next,mode){if(snapshot.task.start===next.start&&snapshot.task.due===next.due)return;await save(snapshot,next,scheduleReason(snapshot.task,next,mode),mode);}
  root.addEventListener('pointerdown',e=>{
-  const bar=e.target.closest?.('[data-schedule-bar]');if(!bar||bar.closest?.('[data-month-week]')?.dataset.monthWeek||e.button!==0||!canStart()||active)return;
+  const bar=e.target.closest?.('[data-schedule-bar]');if(!bar||bar.closest?.('[data-month-week]')?.dataset.monthWeek||e.button!==0||!canStart(e)||active)return;
   const handle=e.target.closest('[data-resize]');if(handle?.disabled)return;
   const snapshot=capture(bar.dataset.scheduleBar,bar.dataset.scheduleSegment);if(!snapshot)return;
   const board=bar.closest('[data-week-timeline]'),range={start:board.dataset.weekTimeline,end:shiftDay(board.dataset.weekTimeline,6)};
@@ -56,7 +56,7 @@ export function installScheduleDrag(root,{capture,save,error,canStart,announce})
  root.addEventListener('keydown',async e=>{
   if(e.key==='Escape'&&active){e.preventDefault();cancel();return;}
   if(active||e.target.closest?.('[data-status-indicator]'))return;
-  const bar=e.target.closest?.('[data-schedule-bar]');if(!bar||bar.closest?.('[data-month-week]')?.dataset.monthWeek||!['ArrowLeft','ArrowRight'].includes(e.key)||!canStart())return;
+  const bar=e.target.closest?.('[data-schedule-bar]');if(!bar||bar.closest?.('[data-month-week]')?.dataset.monthWeek||!['ArrowLeft','ArrowRight'].includes(e.key)||!canStart(e))return;
   const handle=e.target.closest('[data-resize]');if(handle?.disabled)return;
   e.preventDefault();const snapshot=capture(bar.dataset.scheduleBar,bar.dataset.scheduleSegment);if(!snapshot)return;
   try{await apply(snapshot,adjustSchedule(snapshot.task,handle?.dataset.resize||'move',e.key==='ArrowLeft'?-1:1),handle?.dataset.resize||'move');}catch(err){error(err);}

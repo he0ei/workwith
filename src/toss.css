@@ -799,3 +799,188 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
 .minute>.minute-summary::after{content:'⌄';justify-self:end;font-size:18px;line-height:1;color:#6b7684}
 .minute[open]>.minute-summary::after{content:'⌃'}
 @media(max-width:580px){.minute>.minute-summary{gap:8px;grid-template-columns:minmax(0,1fr) max-content 12px}.minute>.minute-summary .minute-meta{font-size:12px;margin:0}}
+
+/* Work-first calendar: three readable weekly queues above a full month. */
+.work-calendar{min-width:0;--work-line:#e7ebf0}
+.work-calendar-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.week-anchor-controls,.calendar-control-right{display:flex;align-items:center;gap:8px;min-width:0}
+.week-anchor-controls label{display:flex;align-items:center;gap:8px;color:#6b7684;font-size:13px;white-space:nowrap}
+.week-anchor-controls input{width:148px;min-height:36px;padding:7px 10px;font-size:14px;background:#fff;border:1px solid var(--work-line);border-radius:9px}
+.calendar-control-right select{width:124px;min-height:36px;padding:7px 10px;font-size:13px}
+.calendar-mode{display:flex;gap:2px;border-radius:10px;padding:3px;background:#edf0f4}
+.calendar-mode button{min-height:30px;padding:5px 13px;border:0;border-radius:7px;background:transparent;color:#6b7684;font-size:13px;font-weight:600;box-shadow:none}
+.calendar-mode button[aria-pressed=true]{background:#fff;color:#191f28;box-shadow:0 1px 3px #202b4012}
+.calendar-mode button[data-action=calendar-edit][aria-pressed=true]{background:#e8f1ff;color:#2365d1}
+.calendar-mode-hint{font-size:12px;color:#788493;margin:8px 0 18px;line-height:1.5}
+.work-calendar .schedule-feedback:empty{display:none}
+.week-board-heading{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px;gap:10px}
+.week-board-heading h2,.work-month-heading h2{font-size:18px;letter-spacing:-.5px;margin:0;font-weight:700}
+.week-board-heading>span{font-size:12px;color:#87919f}
+.work-week-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+.work-week-column{min-width:0;border:1px solid var(--work-line);border-radius:16px;background:#f5f7fa;overflow:hidden}
+.work-week-column.is-current{border-color:#c5d9fa;background:#f3f7ff}
+.work-week-header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 15px 12px}
+.work-week-header h3{display:flex;align-items:center;gap:7px;font-size:16px;margin:0;letter-spacing:-.4px}
+.work-week-header h3 span{font-size:12px;color:#6b7684;font-weight:500;background:#e9edf3;border-radius:7px;padding:2px 6px}
+.is-current .work-week-header h3{color:#2563ca}
+.work-week-header p{font-size:12px;color:#87919f;margin:5px 0 0}
+.work-week-header>small{font-size:11px;color:#87919f;white-space:nowrap}
+.work-week-list{padding:0 9px 10px;display:flex;flex-direction:column;gap:8px;max-height:560px;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-width:thin}
+.week-work-card{min-width:0;background:#fff;border:1px solid #e9edf3;border-radius:12px;box-shadow:0 1px 2px #162c4b03;overflow:hidden}
+.week-card-open{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0;min-height:0;padding:13px;text-align:left;color:#333d4b;background:transparent;border:0;border-radius:12px;box-shadow:none;font-weight:400;cursor:pointer}
+.week-card-open:hover{background:#fcfdff;box-shadow:inset 0 0 0 1px #bad2f5}
+.week-card-open:focus-visible{outline:2px solid #3182f6;outline-offset:-2px}
+.week-card-project{display:flex;align-items:center;gap:6px;width:100%;min-width:0}
+.week-card-project .project-chip{min-width:0;max-width:calc(100% - 42px);font-size:11px;height:23px}
+.week-card-project .project-chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.week-card-project .task-priority-chip{flex:0 0 auto;font-size:10px}
+.week-card-title{font-size:15px;font-weight:650;line-height:1.5;letter-spacing:-.3px;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.week-card-description{font-size:12px;line-height:1.7;color:#6b7684;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.week-card-description.is-empty{color:#9aa4b2}
+.week-card-dates{font-size:11px;line-height:1.5;color:#87919f;font-variant-numeric:tabular-nums}
+.week-card-dates.is-late{color:#c85d55}
+.week-card-bottom{display:flex;align-items:center;flex-wrap:wrap;gap:6px;width:100%;min-width:0;border-top:1px solid #f2f4f7;padding-top:8px}
+.week-card-bottom .calendar-status-people{max-width:100%;flex-wrap:wrap;gap:5px;white-space:normal}
+.week-card-bottom .calendar-person-line{flex:0 1 auto;flex-wrap:wrap;gap:4px;max-width:100%}
+.week-card-bottom .calendar-avatars{flex-wrap:wrap}
+.week-card-bottom .task-status-indicator{font-size:11px}
+.week-card-bottom .calendar-avatar{height:18px;min-width:26px;font-size:10px;padding:0 5px;line-height:18px}
+.week-card-bottom .reviewer-chip{height:auto;font-size:10px;line-height:16px}
+.week-meeting-count,.week-file-count{font-size:10px;color:#87919f;white-space:nowrap}
+.week-work-card.is-completed{border-color:#dce9fb}
+.week-empty{padding:35px 12px;color:#9aa4b2;font-size:13px;text-align:center}
+.mobile-week-tabs,.mobile-month{display:none}
+.week-extra-lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin:14px 0 28px}
+.week-extra{min-width:0;border:1px solid var(--work-line);border-radius:12px;background:#fff}
+.week-extra>summary{padding:12px 14px;font-size:13px;font-weight:600;color:#6b7684;cursor:pointer}
+.week-extra>summary span{font-weight:400;color:#87919f;margin-left:5px}
+.week-extra-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;padding:0 10px 10px;max-height:320px;overflow:auto}
+.week-extra .planning-card{margin:0;width:auto;min-width:0}
+.work-month{padding-top:4px;min-width:0}
+.work-month-heading{margin-bottom:12px;gap:10px}
+.work-month-heading>div{display:flex;align-items:center;gap:8px}
+.work-month-heading strong{font-size:15px;font-weight:600;white-space:nowrap}
+.work-month-heading .icon-btn{min-width:30px;width:30px;height:30px;min-height:30px;border-radius:8px}
+.work-month .month-panel{padding:8px;border-radius:16px;border:1px solid var(--work-line);box-shadow:none}
+.work-month .month-week{min-height:104px}
+.work-month .timeline-scroll{border:0}
+.is-viewing .bar-handle,.is-viewing .planning-grip{display:none}
+.is-viewing .schedule-bar,.is-viewing .bar-body,.is-viewing .planning-card{touch-action:pan-y;cursor:pointer}
+.is-viewing .bar-body{padding-left:10px;padding-right:10px}
+.work-calendar .planning-grip{display:none}
+.work-calendar.is-editing{--work-line:#dce5f2}
+.task-viewer{width:min(720px,calc(100vw - 28px));max-height:90dvh;padding:0;border:0;border-radius:20px;overflow-y:auto}
+.task-readonly{padding:22px 24px}
+.viewer-label{font-size:12px;color:#87919f;font-weight:500}
+.viewer-project{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0}
+.task-readonly h2{font-size:22px;line-height:1.5;letter-spacing:-.6px;margin:0 0 12px;overflow-wrap:anywhere}
+.viewer-meta .calendar-status-people{flex-wrap:wrap;white-space:normal}
+.viewer-dates{display:flex;gap:36px;background:#f7f8fa;padding:14px 16px;border-radius:12px;margin:20px 0}
+.viewer-dates dt{font-size:11px;color:#87919f;margin:0 0 5px}
+.viewer-dates dd{font-size:14px;font-weight:500;margin:0}
+.task-readonly section{margin:22px 0}
+.task-readonly section h3{font-size:14px;margin:0 0 10px}
+.viewer-description{font-size:14px;line-height:1.85;color:#4e5968;overflow-wrap:anywhere}
+.viewer-actions{display:flex;justify-content:flex-end;gap:8px;background:#fff;position:sticky;bottom:-22px;padding:14px 0 0;border-top:1px solid #f2f4f6;margin-top:20px}
+.viewer-actions button{min-height:38px;padding:8px 18px;font-size:13px}
+@media(pointer:coarse){
+ .work-calendar .bar-handle{display:none}
+ .work-calendar .schedule-bar,.work-calendar .bar-body,.work-calendar .planning-card{touch-action:pan-y}
+}
+@media(max-width:900px){.work-week-grid{gap:8px}.work-week-header{padding:13px 11px 10px}.week-card-open{padding:11px}.week-card-description{font-size:12px}}
+@media(max-width:700px){
+ .work-calendar-controls{gap:10px;align-items:stretch}
+ .week-anchor-controls{width:100%;justify-content:space-between;gap:4px}
+ .week-anchor-controls label{font-size:12px;gap:7px}
+ .week-anchor-controls input{width:142px;background:#fff}
+ .week-anchor-controls .icon-btn{width:32px;min-width:32px;height:34px;min-height:34px}
+ .calendar-control-right{width:100%;justify-content:space-between}
+ .calendar-control-right select{width:136px}
+ .calendar-mode-hint{font-size:11px;line-height:1.6;margin:10px 0 18px;max-width:100%}
+ .week-board-heading>span{font-size:10px}
+ .week-board-heading h2,.work-month-heading h2{font-size:17px}
+ .mobile-week-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:4px;background:#eef1f5;border-radius:12px;gap:4px;margin-bottom:12px}
+ .mobile-week-tabs button{display:flex;justify-content:center;align-items:center;gap:6px;min-height:38px;font-size:13px;font-weight:600;border:0;border-radius:9px;background:transparent;color:#87919f;box-shadow:none}
+ .mobile-week-tabs button span{font-size:11px;font-weight:400}
+ .mobile-week-tabs button[aria-pressed=true]{background:#fff;color:#2563ca;box-shadow:0 1px 3px #202b4010}
+ .work-week-grid{display:block}
+ .work-week-column{display:none;border-radius:14px}
+ .work-week-column.is-mobile-selected{display:block}
+ .work-week-header{padding:15px 15px 12px}
+ .work-week-list{max-height:none;overflow:visible;padding:0 10px 10px;gap:9px}
+ .week-card-open{padding:14px;gap:9px}
+ .week-card-title{font-size:16px;-webkit-line-clamp:3}
+ .week-card-description{font-size:13px;line-height:1.8;-webkit-line-clamp:3}
+ .week-card-dates{font-size:12px}
+ .week-card-bottom{row-gap:8px}
+ .week-card-bottom .task-status-indicator{font-size:12px}
+ .week-card-bottom .calendar-avatar{font-size:11px;min-width:30px;height:20px;line-height:20px}
+ .week-extra-lists{grid-template-columns:1fr;margin:12px 0 26px}
+ .week-extra-cards{grid-template-columns:1fr;max-height:380px}
+ .desktop-month{display:none}
+ .mobile-month{display:block}
+ .work-month-heading{flex-wrap:wrap;align-items:center;gap:10px}
+ .work-month-heading>div{gap:4px}
+ .work-month-heading strong{font-size:13px}
+ .work-month-heading .text-btn{font-size:11px;padding:5px;min-height:32px}
+ .compact-month{border:1px solid #e7ebf0;border-radius:14px;background:#fff;padding:8px}
+ .compact-weekdays,.compact-month-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+ .compact-weekdays span{text-align:center;font-size:11px;color:#87919f;padding:8px 0}
+ .compact-weekdays span:first-child{color:#c56c6c}
+ .compact-day{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;min-width:0;padding:6px 0;border-radius:9px;background:transparent;border:0;box-shadow:none;color:#4e5968;font-size:13px;font-weight:500;touch-action:pan-y}
+ .compact-day small{height:12px;font-size:9px;line-height:12px;color:#87919f}
+ .compact-day.outside-month{opacity:.32}
+ .compact-day.is-today>span{color:#2563ca;font-weight:700}
+ .compact-day[aria-pressed=true]{background:#eaf2ff;color:#2563ca}
+ .compact-day[aria-pressed=true] small{color:#2563ca}
+ .day-agenda{margin-top:16px}
+ .day-agenda h3{font-size:14px;font-weight:600;margin:0 0 10px}
+ .day-agenda h3 span{color:#87919f;font-weight:400;font-size:12px;margin-left:5px}
+ .day-agenda .week-work-card{margin-bottom:9px}
+ .task-viewer{width:calc(100vw - 20px);max-height:94dvh;border-radius:18px}
+ .task-readonly{padding:18px 17px}
+ .task-readonly h2{font-size:20px}
+ .viewer-description{font-size:14px;line-height:1.9}
+ .viewer-actions{bottom:-18px}
+}
+/* Queue scrolling must not squeeze card content or participant labels. */
+.week-work-card{flex:0 0 auto}
+.week-card-open>*{flex-shrink:0}
+.week-card-bottom .calendar-status-people{height:auto;min-height:20px;align-items:center}
+.week-card-bottom .calendar-person-line{height:auto;min-height:20px;overflow:visible;align-items:center}
+.week-anchor-controls label{flex-direction:row;margin:0}
+.work-week-list{max-height:480px}
+@media(max-width:700px){.work-week-list{max-height:none}}
+/* A compact mobile shell leaves the first task above the fold. */
+@media(max-width:700px){
+ .sidebar,.sidebar.is-collapsed{position:fixed;inset:auto 0 0;width:100%;height:auto;padding:5px 6px calc(5px + env(safe-area-inset-bottom));z-index:40;background:#fff;border:0;border-top:1px solid #e7ebf0;box-shadow:0 -3px 16px #152b4405;border-radius:0;box-sizing:border-box}
+ .sidebar .sidebar-heading,.sidebar .workspace,.sidebar .nav-label{display:none}
+ .sidebar nav,.sidebar.is-collapsed nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1px;margin:0;padding:0;overflow:visible}
+ .sidebar nav button{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;min-width:0;min-height:52px;margin:0;padding:5px 1px;border:0;border-radius:9px;white-space:nowrap;font-size:10px}
+ .sidebar nav button .nav-text{display:block;font-size:10px;line-height:1.3;letter-spacing:-.4px}
+ .sidebar nav button>span:first-child{height:20px;display:flex;align-items:center;justify-content:center}
+ .sidebar nav button .app-icon{height:20px;width:20px}
+ .sidebar nav button small,.sidebar nav button.active:before{display:none}
+ .main,.main.sidebar-is-collapsed{margin:0;min-width:0}
+ .topbar{min-height:46px;padding:7px 14px;gap:6px;align-items:center;justify-content:space-between}
+ .topbar:before{content:'팀 워크스페이스';font-size:14px;font-weight:650;letter-spacing:-.4px;color:#333d4b;white-space:nowrap}
+ .topbar .breadcrumb{display:none}
+ .shared-member-label{display:flex;flex-direction:row;align-items:center;gap:6px;font-size:10px;margin:0}
+ .shared-member-label select{width:84px;min-height:30px;margin:0;padding:4px 7px;font-size:13px}
+ .demo-banner{min-height:20px;padding:2px 14px;font-size:10px;line-height:1.5}
+ .main main{padding:16px 14px 86px}
+ .page-heading{margin-bottom:16px;align-items:center;gap:10px}
+ .page-heading h1{font-size:21px;margin:0}
+ .page-heading p{display:none}
+ .heading-actions{padding:0}
+ .heading-actions button{min-height:36px;padding:7px 12px;font-size:12px;margin:0}
+ .week-anchor-controls input{font-size:16px;width:148px}
+ .calendar-control-right select{font-size:14px}
+ .week-board-heading>span{font-size:9px}
+ #toast{bottom:82px}
+}
+.week-card-heading{display:flex;align-items:flex-start;gap:6px;min-width:0;width:100%}
+.week-card-heading .week-card-title{min-width:0;flex:1}
+.week-card-heading .task-priority-chip{flex:0 0 auto;margin-top:2px;font-size:10px}
+.week-card-project .project-chip{max-width:100%}
+@media(max-width:700px){.compact-day.is-today>span{display:grid;place-items:center;width:23px;height:23px;border-radius:8px;background:#3182f6;color:#fff;font-weight:600}}
