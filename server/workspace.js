@@ -6,7 +6,7 @@ export function publicState(snapshot,actor){
  const state=structuredClone(snapshot.state),versions={};state.tasks=state.tasks.filter(t=>visible(t,actor));state.history=state.history.filter(h=>h.visibility==='shared'||h.owner===actor);
  for(const e of entities)for(const x of state[e])versions[e+':'+x.id]=snapshot.versions[e+':'+x.id];return {state,versions,user:actor};
 }
-export async function mutate(repository,body,actor){
+export async function mutate(repository,body,actor,{sharedAccess=false}={}){
  if(!USERS.some(u=>u.id===actor))throw new ApiError(403,'등록된 팀원만 접근할 수 있습니다.');
  if(!body||!Number.isInteger(body.revision)||body.revision<0)throw new ApiError(400,'저장 버전이 필요합니다.');
  const a=body.action,batch=a?.type==='drafts.register',key=map[a?.type?.split('.')[0]];
@@ -17,7 +17,7 @@ export async function mutate(repository,body,actor){
    const item=s[key].find(x=>x.id===id);
    if(key==='tasks'&&item&&!visible(item,actor))throw new ApiError(403,'다른 사용자의 개인 업무에 접근할 수 없습니다.');
    if((before.versions[key+':'+id]??null)!==body.baseVersion)throw new ApiError(409,'다른 사람이 먼저 수정했습니다. 입력한 내용을 확인하고 최신 데이터에서 다시 저장하세요.');
-   if(key==='minutes'&&a.type==='minutes.save'&&a.value.author!==actor)throw new ApiError(403,'회의록 작성자는 로그인 사용자여야 합니다.');
+   if(!sharedAccess&&key==='minutes'&&a.type==='minutes.save'&&a.value.author!==actor)throw new ApiError(403,'회의록 작성자는 로그인 사용자여야 합니다.');
   }
   if((batch||a.type.endsWith('.delete'))&&s.revision!==body.revision)throw new ApiError(409,'다른 변경이 반영되었습니다. 최신 데이터를 확인한 뒤 다시 시도하세요.');
   let next;try{next=batch?registerDrafts(s,a.value,actor):change(s,a,actor);}catch(err){throw new ApiError(400,err.message);}
