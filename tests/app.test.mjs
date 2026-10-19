@@ -74,7 +74,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   assert.match(nodes.get('#app').innerHTML,/task-status-indicator status-dot-3/);assert.match(nodes.get('#app').innerHTML,/aria-label="업무 상태: 완료"/);const completed=await item('tasks','t');await listeners.change({target:{id:'',dataset:{status:'t'},value:'진행 중'}});
   const updated=await item('tasks','t');assert.equal(updated.visibility,'private');assert.deepEqual({...updated,status:completed.status,completedAt:completed.completedAt},completed);assert.match(nodes.get('#app').innerHTML,/data-drag-task="t"/);assert.equal(nodes.get('#toast').textContent,'상태를 변경했습니다.');assert.match(nodes.get('#app').innerHTML,/task-status-indicator status-dot-1/);
   await click('data-filter','done');assert.ok(!nodes.get('#app').innerHTML.includes('data-drag-task="t"'));
-  await click('data-nav','dashboard');assert.match(nodes.get('#app').innerHTML,/진행 중 업무/);assert.ok(!nodes.get('#app').innerHTML.includes('이번 주에 집중할 업무'));assert.ok(!nodes.get('#app').innerHTML.includes('이번 주 업무'));assert.match(nodes.get('#app').innerHTML,/칸반보드/);assert.ok(!nodes.get('#app').innerHTML.includes('협업 스케줄'));assert.match(nodes.get('#app').innerHTML,new RegExp(before.title));
+  await click('data-nav','dashboard');assert.match(nodes.get('#app').innerHTML,/진행 중 업무/);assert.ok(!nodes.get('#app').innerHTML.includes('이번 주에 집중할 업무'));assert.ok(!nodes.get('#app').innerHTML.includes('이번 주 업무'));assert.ok(!nodes.get('#app').innerHTML.includes('data-nav="collab"'));assert.ok(!nodes.get('#app').innerHTML.includes('협업 스케줄'));assert.match(nodes.get('#app').innerHTML,new RegExp(before.title));
  });
  await t.test('poll refresh keeps open editor and stale save is rejected without overwriting input',async()=>{
   await click('data-action','task','t');const html=nodes.get('#editor').innerHTML;
@@ -155,7 +155,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
  await t.test('task editing uploads private files, preserves on ordinary edit, cleans conflicts and removes attachments',async()=>{
   const file=new File(['%PDF-1.7'],'task.pdf',{type:'application/pdf'}),attachment={bucket:'workwith-task-files',path:'00000000-0000-4000-8000-000000000001/t/00000000-0000-4000-8000-000000000005.pdf',name:file.name,type:file.type,size:file.size};const removed=[];
   store.uploadAttachment=async(f,options)=>{assert.equal(f,file);assert.equal(options.taskId,'t');return attachment;};store.removeAttachment=async a=>removed.push(a.path);
-  const old=await item('tasks','t');await click('data-action','task','t');assert.match(nodes.get('#editor').innerHTML,/name="note"/);assert.match(nodes.get('#editor').innerHTML,/<details/);assert.match(nodes.get('#editor').innerHTML,/type="radio" name="status"/);
+  const old=await item('tasks','t');await click('data-action','calendar-edit');await click('data-action','task','t');assert.match(nodes.get('#editor').innerHTML,/name="note"/);assert.match(nodes.get('#editor').innerHTML,/<details/);assert.match(nodes.get('#editor').innerHTML,/type="radio" name="status"/);
   await submit('task',{...old,note:'제목 아래에서 작성한 설명',file},'t');assert.equal((await item('tasks','t')).note,'제목 아래에서 작성한 설명');assert.deepEqual((await item('tasks','t')).attachment,attachment);assert.equal((await item('tasks','t')).visibility,'private');
   await click('data-nav','archive');assert.match(nodes.get('#app').innerHTML,/task-preview/);
   const attached=await item('tasks','t');await click('data-action','task','t');await submit('task',{...attached,title:'파일 유지'},'t');assert.deepEqual((await item('tasks','t')).attachment,attachment);assert.equal(removed.length,0);
@@ -209,27 +209,22 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await submit('task',{...old,start:'2026-10-20',due:'2026-10-21',hours:'1'},old.id);
   assert.match(nodes.get('#form-error').textContent,/일정 변경 시 사유를 입력해야 합니다/);assert.equal((await item('tasks',old.id)).due,old.due);
  });
- await t.test('weekly calendar automatically shows this and next week and preserves the monthly view',async()=>{
-  const range=weekRange(today()),next=shiftDay(range.start,7);
-  const values={visibility:'shared',assignee:'sj',projectId:'gowoori',status:'예정',priority:'보통',hours:'0',kpiId:'',url:'',note:''};
-  await click('data-action','task');await submit('task',{...values,title:'이번 주 일정 확인',start:range.start,due:range.end},'weekly-this');
-  await click('data-action','task');await submit('task',{...values,title:'다음 주 일정 확인',start:next,due:shiftDay(next,6)},'weekly-next');
-  await click('data-nav','calendar');assert.match(nodes.get('#app').innerHTML,/이번 주 할 일/);assert.equal((nodes.get('#app').innerHTML.match(/class="week-days"/g)||[]).length,2);assert.match(nodes.get('#app').innerHTML,/data-schedule-bar/);assert.match(nodes.get('#app').innerHTML,/다음 주 할 일/);assert.match(nodes.get('#app').innerHTML,/weekly-this/);assert.match(nodes.get('#app').innerHTML,/weekly-next/);
-  await click('data-action','calendar-month');assert.match(nodes.get('#app').innerHTML,/class="calendar month-board"/);
-  await click('data-action','calendar-week');await click('data-action','week-next');assert.match(nodes.get('#app').innerHTML,/선택한 주 할 일/);await click('data-action','week-today');
-  await click('data-action','task','weekly-this');assert.equal(nodes.get('#editor').open,true);
-  await submit('task',{...values,title:'이번 주 일정 확인',start:next,due:shiftDay(next,6),reason:'다음 주로 조정'},'weekly-this');
-  assert.match(nodes.get('#app').innerHTML,/다음 주 할 일/);assert.equal((await item('tasks','weekly-this')).start,next);
-  nodes.set('.next-week-board',{open:true});
-  const before=await item('tasks','weekly-this');
-  await listeners.keydown({key:'ArrowRight',preventDefault(){},target:{closest:selector=>selector==='[data-schedule-bar]'?{dataset:{scheduleBar:'weekly-this'}}:null}});
-  const after=await item('tasks','weekly-this');assert.equal(after.start,shiftDay(before.start,1));assert.equal(after.due,shiftDay(before.due,1));assert.equal(after.visibility,before.visibility);assert.equal(after.status,before.status);assert.equal(after.projectId,before.projectId);assert.deepEqual(after.collaborators,before.collaborators);assert.match(nodes.get('#app').innerHTML,/<details class="next-week-board" open>/);nodes.delete('.next-week-board');
-
+ await t.test('work-first calendar shows three week queues with descriptions and month below, default viewer never saves',async()=>{
+  const range=weekRange(today()),next=shiftDay(range.start,7),previous=shiftDay(range.start,-7);
+  const values={visibility:'shared',assignee:'sj',projectId:'gowoori',status:'예정',priority:'보통',hours:'0',kpiId:'',url:'',note:'화면과 문구를 확인하고 고객이 이해하기 쉬운 설명으로 정리합니다.'};
+  for(const [id,title,start] of [['weekly-prev','지난주 결과 확인',previous],['weekly-this','이번 주 일정 확인',range.start],['weekly-next','다음 주 일정 확인',next]]){await click('data-action','task');await submit('task',{...values,title,start,due:shiftDay(start,6)},id);}
+  await click('data-nav','calendar');let html=nodes.get('#app').innerHTML;assert.match(html,/is-viewing/);assert.ok(!html.includes('data-nav="collab"'));assert.match(html,/id="work-week-previous"/);assert.match(html,/id="work-week-current"/);assert.match(html,/id="work-week-next"/);assert.match(html,/화면과 문구/);assert.ok(html.indexOf('work-week-grid')<html.indexOf('work-month'));assert.match(html,/compact-month-days/);
+  const before=await pg.repository.load();await click('data-action','task','weekly-this');assert.match(nodes.get('#editor').innerHTML,/업무 상세 · 보기 모드/);assert.ok(!nodes.get('#editor').innerHTML.includes('<form'));assert.ok(!nodes.get('#editor').innerHTML.includes('type="submit"'));assert.deepEqual((await pg.repository.load()).state,before.state);await click('data-action','close');
+  await click('data-action','mobile-week','previous');assert.match(nodes.get('#app').innerHTML,/work-week-column is-mobile-selected/);await click('data-action','mobile-week','current');
+  await listeners.change({target:{id:'week-anchor',value:next,dataset:{}}});assert.match(nodes.get('#app').innerHTML,new RegExp('value="'+next+'"'));assert.deepEqual((await pg.repository.load()).state,before.state);await click('data-action','week-today');
+  await click('data-action','task','weekly-this');await click('data-action','calendar-edit-task','weekly-this');assert.match(nodes.get('#app').innerHTML,/is-editing/);assert.match(nodes.get('#editor').innerHTML,/name="start"/);
+  await submit('task',{...values,title:'이번 주 일정 확인',start:next,due:shiftDay(next,6),reason:'다음 주로 조정'},'weekly-this');assert.equal((await item('tasks','weekly-this')).start,next);
+  await click('data-nav','dashboard');await click('data-nav','calendar');assert.match(nodes.get('#app').innerHTML,/is-viewing/);
  });
  await t.test('unscheduled cards assign a chosen calendar date while retaining project, status and participants',async()=>{
   await click('data-action','task');await submit('task',{title:'일정 배정 검증',visibility:'shared',assignee:'sj',collaborator:'sy',projectId:'gowoori',status:'검토 요청',priority:'보통',hours:'1',kpiId:'',url:'',note:'',start:'',due:''},'planning-only');
-  await click('data-nav','calendar');const html=nodes.get('#app').innerHTML;assert.match(html,/class="planning-card"/);assert.match(html,/task-status-indicator/);assert.match(html,/data-plan-task="planning-only"/);assert.match(html,/class="calendar-info"/);assert.match(html,/class="bar-project"/);assert.ok(!html.includes('id="schedule-instructions"'));
-  await click('data-action','task','planning-only');assert.equal(nodes.get('#editor').open,true);await click('data-action','close');
+  await click('data-nav','calendar');const html=nodes.get('#app').innerHTML;assert.match(html,/class="planning-card"/);assert.match(html,/task-status-indicator/);assert.match(html,/data-plan-task="planning-only"/);assert.match(html,/보기 모드/);assert.match(html,/class="bar-project"/);assert.ok(!html.includes('id="schedule-instructions"'));
+  await click('data-action','calendar-edit');await click('data-action','task','planning-only');assert.equal(nodes.get('#editor').open,true);await click('data-action','close');
   const source={dataset:{planTask:'planning-only'},classList:{add(){},remove(){}}},board={dataset:{weekTimeline:weekRange(today()).start},getBoundingClientRect:()=>({left:0,right:700,width:700}),querySelector:()=>null};
   document.elementFromPoint=()=>({closest:()=>board});
   await listeners.pointerdown({target:{closest:s=>s==='[data-plan-task]'?source:null},button:0,pointerId:1,clientX:100,clientY:100});
@@ -238,7 +233,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   const saved=await item('tasks','planning-only');assert.equal(saved.start,shiftDay(weekRange(today()).start,2));assert.equal(saved.due,saved.start);assert.equal(saved.projectId,'gowoori');assert.equal(saved.status,'검토 요청');assert.deepEqual(saved.collaborators,['sy']);assert.ok(!nodes.get('#app').innerHTML.includes('data-plan-task="planning-only"'));assert.match(nodes.get('#app').innerHTML,/data-schedule-bar="planning-only"/);
  });
  await t.test('monthly date dragging persists only schedule fields through SQL and leaves inline metadata compact',async()=>{
-  await click('data-action','calendar-month');
+  await click('data-action','calendar-edit');
   const before=await item('tasks','planning-only'),from=weekRange(before.start).start,to=shiftDay(from,7),classes={add(){},remove(){}};
   const board={dataset:{weekTimeline:from,monthWeek:'true'},getBoundingClientRect:()=>({left:0,right:700,width:700}),querySelector:()=>null};
   const destination={...board,dataset:{weekTimeline:to,monthWeek:'true'}};
@@ -251,7 +246,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   const after=await item('tasks',before.id);assert.equal(after.start,shiftDay(before.start,7));assert.equal(after.due,shiftDay(before.due,7));
   for(const key of ['status','projectId','visibility','assignee','collaborators','note','url','dependencies'])assert.deepEqual(after[key],before[key]);
   assert.match(nodes.get('#app').innerHTML,/class="bar-meta"/);assert.match(nodes.get('#app').innerHTML,/class="planning-meta"/);assert.equal((await pg.repository.load()).state.history.length,0);
-  await click('data-action','calendar-week');
+  await click('data-action','calendar-view');
  });
  await t.test('team calendar shows shared work of other members and supports a member filter without a schedule button',async()=>{
   await click('data-action','task');await submit('task',{title:'승연 단독 일정',visibility:'shared',assignee:'sy',projectId:'gowoori',status:'예정',priority:'보통',hours:'1',kpiId:'',url:'',note:'함께 확인할 내용',start:today(),due:today()},'team-only');
@@ -265,7 +260,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await listeners.change({target:{id:'',dataset:{status:'team-only'},value:'완료'}});
   const before=await pg.repository.load();await click('data-nav','calendar');
   let html=nodes.get('#app').innerHTML;assert.match(html,/data-schedule-bar="team-only"/);assert.match(html,/schedule-completed/);assert.match(html,/업무 상태: 완료/);assert.match(html,/완료 [0-9]+개/);assert.match(html,/task-priority-chip priority-normal/);
-  await click('data-action','calendar-month');html=nodes.get('#app').innerHTML;assert.match(html,/data-schedule-bar="team-only"/);assert.match(html,/업무 상태: 완료/);assert.match(html,/bar-title-line/);
+  await click('data-action','calendar-edit');html=nodes.get('#app').innerHTML;assert.match(html,/data-schedule-bar="team-only"/);assert.match(html,/업무 상태: 완료/);assert.match(html,/bar-title-line/);
   assert.deepEqual((await pg.repository.load()).state,before.state);
  });
  await t.test('pasted date and multiple project links reach the SQL archive and each task without new projects',async()=>{
@@ -313,7 +308,7 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await submit('task',values,'reviewer-ui-task');assert.deepEqual((await item('tasks','reviewer-ui-task')).reviewers,['sj']);
   await click('data-nav','collab');await listeners.change({target:{id:'assignee-filter',value:'',dataset:{}}});assert.match(nodes.get('#app').innerHTML,/검토자: 정승재/);
   await click('data-nav','calendar');await listeners.change({target:{id:'calendar-member',value:'',dataset:{}}});assert.match(nodes.get('#app').innerHTML,/reviewer-chip/);
-  await click('data-action','task','reviewer-ui-task');assert.match(nodes.get('#editor').innerHTML,/name="reviewer" value="sj" checked/);
+  await click('data-action','calendar-edit');await click('data-action','task','reviewer-ui-task');assert.match(nodes.get('#editor').innerHTML,/name="reviewer" value="sj" checked/);
   await submit('task',{...values,reviewer:['ceo']},'reviewer-ui-task');assert.deepEqual((await item('tasks','reviewer-ui-task')).reviewers,['ceo']);
   await click('data-action','task','reviewer-ui-task');await submit('task',{...values,reviewer:[]},'reviewer-ui-task');assert.deepEqual((await item('tasks','reviewer-ui-task')).reviewers,[]);
  });
@@ -329,6 +324,18 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await create({title:'후속 전달 기록',body,meetingDate:today(),projectId:'',generateTasks:'on'});
   const repeated=await pg.repository.load(),followup=repeated.state.minutes.find(m=>m.title==='후속 전달 기록');assert.equal(repeated.state.tasks.length,after.state.tasks.length);assert.deepEqual(followup.taskIds,[task.id]);assert.equal(followup.body,body);
   await click('data-action','task',task.id);assert.match(nodes.get('#editor').innerHTML,/minute-summary/);assert.match(nodes.get('#editor').innerHTML,/minute-date/);assert.match(nodes.get('#editor').innerHTML,/후속 전달 기록/);await click('data-action','close');
+ });
+ await t.test('viewer pointer and keyboard movement plus edit-mode touch scrolling never write a schedule',async()=>{
+  await click('data-action','close');await click('data-nav','calendar');await click('data-action','calendar-view');
+  const before=await pg.repository.load(),from=weekRange(today()).start,to=shiftDay(from,7),classes={add(){},remove(){}};
+  const board={dataset:{weekTimeline:from,monthWeek:'true'},getBoundingClientRect:()=>({left:0,right:700,width:700}),querySelector:()=>null},destination={...board,dataset:{weekTimeline:to,monthWeek:'true'}};
+  const bar={dataset:{scheduleBar:'weekly-this'},classList:classes,closest:s=>s==='[data-month-week]'?board:null},target={closest:s=>s==='[data-schedule-bar]'?bar:null};
+  document.elementFromPoint=()=>({closest:s=>s==='[data-month-week]'?destination:null});
+  for(const [mode,pointerType]of [['calendar-view','mouse'],['calendar-edit','touch'],['calendar-edit','pen']]){
+   await click('data-action',mode);await listeners.pointerdown({target,button:0,pointerType,pointerId:40,clientX:250,clientY:50});await listeners.pointermove({pointerId:40,pointerType,clientX:350,clientY:200,cancelable:true,preventDefault(){}});await listeners.pointerup({pointerId:40,pointerType,clientX:350,clientY:200});
+  }
+  await click('data-action','calendar-view');await listeners.keydown({key:'ArrowRight',target,preventDefault(){}});delete document.elementFromPoint;
+  await click('data-action','mobile-week','next');await click('data-action','month-day','2026-11-01');assert.match(nodes.get('#app').innerHTML,/2026년 11월/);assert.match(nodes.get('#app').innerHTML,/11-01 업무/);assert.deepEqual((await pg.repository.load()).state,before.state);
  });
  await pg.close();
 });

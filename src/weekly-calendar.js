@@ -23,11 +23,11 @@ export function weekDays(range,now=today()){
 }
 export const calendarTasks=(state,user,member='')=>visibleTasks(state,user).filter(t=>!member||participates(t,member)).sort(calendarOrder);
 export function weeklyCalendar(state,user,anchor=today(),now=today(),member=''){
- const current=weekRange(anchor),next=weekRange(shiftDay(current.start,7));
+ const current=weekRange(anchor),previous=weekRange(shiftDay(current.start,-7)),next=weekRange(shiftDay(current.start,7));
  const mine=calendarTasks(state,user,member);
  const inRange=overlapsSchedule;
  const list=range=>mine.filter(t=>inRange(t,range)).sort(calendarOrder);
- return {current:{...current,tasks:list(current)},next:{...next,tasks:list(next)},overdue:mine.filter(t=>t.status!=='완료'&&taskSchedules(t).length&&taskSchedules(t).every(s=>s.due<now&&s.due<current.start)).sort(calendarOrder),unscheduled:mine.filter(t=>!taskSchedules(t).length).sort(calendarOrder)};
+ return {previous:{...previous,tasks:list(previous)},current:{...current,tasks:list(current)},next:{...next,tasks:list(next)},overdue:mine.filter(t=>t.status!=='완료'&&taskSchedules(t).length&&taskSchedules(t).every(s=>s.due<now&&s.due<current.start)).sort(calendarOrder),unscheduled:mine.filter(t=>!taskSchedules(t).length).sort(calendarOrder)};
 }
 // A task spanning today counts once, including completed work shown on the calendar.
 export function calendarDayTasks(state,user,date=today()){

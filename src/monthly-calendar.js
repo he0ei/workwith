@@ -26,7 +26,7 @@ export function installMonthDrag(root,{capture,save,error,canStart,announce}){
   try{await save(snapshot,next,scheduleReason(snapshot.task,next,mode).replace('주간','월간'),mode);}catch(err){error(err);}finally{pending=false;bar.classList.remove('schedule-saving');}
  }
  root.addEventListener('pointerdown',e=>{
-  const bar=e.target.closest?.('[data-schedule-bar]'),board=bar?.closest?.('[data-month-week]');if(!board||e.button!==0||active||pending||!canStart())return;
+  const bar=e.target.closest?.('[data-schedule-bar]'),board=bar?.closest?.('[data-month-week]');if(!board||e.button!==0||active||pending||!canStart(e))return;
   const handle=e.target.closest('[data-resize]');if(handle?.disabled)return;
   const snapshot=capture(bar.dataset.scheduleBar,bar.dataset.scheduleSegment),anchor=dropDate(board,e.clientX);if(!snapshot||!anchor)return;
   active={bar,snapshot,anchor,mode:handle?.dataset.resize||'move',x:e.clientX,y:e.clientY,pointerId:e.pointerId,moved:false};bar.setPointerCapture?.(e.pointerId);
@@ -51,7 +51,7 @@ export function installMonthDrag(root,{capture,save,error,canStart,announce}){
  root.addEventListener('keydown',async e=>{
   if(e.key==='Escape'&&active){e.preventDefault();cancel();return;}
   const delta={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key],bar=e.target.closest?.('[data-schedule-bar]');
-  if(!delta||!bar?.closest?.('[data-month-week]')||active||pending||!canStart())return;
+  if(!delta||!bar?.closest?.('[data-month-week]')||active||pending||!canStart(e))return;
   const handle=e.target.closest('[data-resize]');if(handle?.disabled)return;
   const snapshot=capture(bar.dataset.scheduleBar,bar.dataset.scheduleSegment);if(!snapshot)return;e.preventDefault();
   await apply(snapshot,adjustSchedule(snapshot.task,handle?.dataset.resize||'move',delta),handle?.dataset.resize||'move',bar);

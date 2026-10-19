@@ -11,7 +11,7 @@ export function installUnscheduledDrag(root,{capture,save,error,canStart,announc
  const clear=()=>{ghost?.remove();ghost=null;const a=active;active=null;a?.source.classList.remove('planning-dragging');if(a?.source.hasPointerCapture?.(a.pointerId))a.source.releasePointerCapture(a.pointerId);clearHover();announce('');};
  const destination=e=>{const board=root.elementFromPoint?.(e.clientX,e.clientY)?.closest('[data-week-timeline]');return {board,date:board?dropDate(board,e.clientX):''};};
  root.addEventListener('pointerdown',e=>{
-  const source=e.target.closest?.('[data-plan-task]');if(!source||e.button!==0||active||!canStart())return;
+  const source=e.target.closest?.('[data-plan-task]');if(!source||e.button!==0||active||!canStart(e))return;
   if(e.target.closest('input,select'))return;
   const snapshot=capture(source.dataset.planTask);if(!snapshot||(!source.dataset.continueTask&&(snapshot.task.start||snapshot.task.due))||snapshot.task.status==='완료')return;
   active={snapshot,source,x:e.clientX,y:e.clientY,pointerId:e.pointerId,moved:false};source.setPointerCapture?.(e.pointerId);
@@ -34,5 +34,5 @@ export function installUnscheduledDrag(root,{capture,save,error,canStart,announc
  root.addEventListener('pointercancel',cancel);root.addEventListener('visibilitychange',cancel);root.addEventListener('lostpointercapture',e=>{if(active?.pointerId===e.pointerId)cancel();});
  root.addEventListener('keydown',e=>{if(e.key==='Escape'&&active){e.preventDefault();cancel();}});
  root.addEventListener('click',e=>{const card=e.target.closest?.('[data-plan-task]');if(card&&suppress?.id===card.dataset.planTask&&Date.now()<suppress.until){e.preventDefault();e.stopImmediatePropagation();}},true);
- return {isDragging:()=>Boolean(active)};
+ return {isDragging:()=>Boolean(active),cancel};
 }
