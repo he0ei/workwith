@@ -741,3 +741,5 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
 .task-editor .task-edit-section summary { font-size:12px; }
 .task-editor .advanced-fields { margin-top:12px; }
 @media(max-width:580px) { .task-editor .task-status-strip { display:block; }.task-editor .task-status-strip legend { float:none; line-height:1.5; margin-bottom:5px; }.task-editor input:not([type=checkbox]):not([type=radio]):not([type=file]),.task-editor select,.task-editor .task-description textarea { font-size:16px; } }
+.shared-member-label { display:flex; align-items:center; gap:8px; font-size:12px; white-space:nowrap; }
+.shared-member-label select { width:auto; min-height:32px; padding:4px 8px; font-size:13px; background:#fff; border:1px solid #e5e8eb; }

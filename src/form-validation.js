@@ -20,7 +20,7 @@ export function validateEditor(form,kind,values,old){
   if(values.start&&values.due&&values.due<values.start)fail('due','마감일은 시작일과 같거나 이후여야 합니다.');
   if(old&&((old.start||'')!==(values.start||'')||(old.due||'')!==(values.due||''))&&!values.reason?.trim())fail('reason','일정 변경 시 사유를 입력해야 합니다.');
  }
- if(kind==='task'&&values.visibility==='shared'&&!values.projectId)fail('projectId','공유 업무를 연결할 프로젝트를 선택해 주세요.');
+ if(kind==='task'&&form.dataset?.sharedLink!=='true'&&values.visibility==='shared'&&!values.projectId)fail('projectId','공유 업무를 연결할 프로젝트를 선택해 주세요.');
 }
 export function clearFieldError(input){
  if(!input?.hasAttribute?.('aria-invalid'))return;
