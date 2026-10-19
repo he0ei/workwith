@@ -538,7 +538,7 @@ footer { font-size:12px; }
 .bar-span-1 { height:48px; }
 .schedule-row:has(.bar-span-1) { min-height:54px; }
 .bar-span-1 .bar-body strong { font-size:12px; line-height:15px; }
-.bar-span-1 .bar-meta { height:auto; flex-wrap:wrap; gap:0; }
+.bar-span-1 .bar-meta { display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-rows:13px 14px; height:27px; gap:0; }
 .bar-span-1 .bar-project { flex:0 0 100%; font-size:10px; line-height:13px; }
 .bar-span-1 .calendar-status-people { gap:3px; }
 .bar-span-1 .calendar-avatars { gap:0; }
@@ -554,11 +554,12 @@ footer { font-size:12px; }
 /* Two-syllable names remain readable without increasing normal row height. */
 .calendar-avatar { width:auto; min-width:24px; padding:0 3px; flex:0 0 auto; border-radius:8px; box-sizing:border-box; }
 .bar-span-1 .calendar-status-people { display:contents; }
-.bar-span-1 .bar-project { flex:1; line-height:13px; }
+.bar-span-1 .bar-project { grid-column:1; grid-row:1; width:100%; line-height:13px; }
 .bar-span-1 .calendar-meta-divider { display:none; }
-.bar-span-1 .task-status-indicator { height:13px; }
+.bar-span-1 .task-status-indicator { grid-column:2; grid-row:1; height:13px; }
 .bar-span-1 .status-text { line-height:13px; }
-.bar-span-1 .calendar-avatars { flex:0 0 100%; height:14px; gap:2px; }
+.bar-span-1 .calendar-person-line { grid-column:1 / -1; grid-row:2; width:100%; height:14px; gap:3px; }
+.bar-span-1 .calendar-avatars { flex:0 1 auto; min-width:0; height:14px; gap:2px; overflow:hidden; }
 .bar-span-1 .calendar-avatar { width:auto; min-width:24px; flex:0 0 auto; padding:0 3px; }
 .bar-span-1 .calendar-avatar+.calendar-avatar { margin-left:0; }
 
@@ -757,6 +758,23 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
 .calendar-trays .carryover-list{grid-template-columns:minmax(0,1fr);max-height:380px;overflow-y:auto;padding:1px}
 @media(max-width:800px){.calendar-trays{grid-row:1}.calendar-trays .carryover-list{max-height:180px}}
 .reviewer-chip{display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:2px 6px;border-radius:5px;background:#f0f2f6;color:#526071;font-size:11px;font-weight:400;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.reviewer-chip>span{color:#7b8796}.task-card>.reviewer-chip{margin:4px 0 2px}.bar-meta>.reviewer-chip{flex-shrink:1;padding:0 4px;font-size:10px;line-height:16px}
+.reviewer-role{color:#7b8796;flex:0 0 auto}.reviewer-names{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .task-editor .reviewer-options{margin-top:10px}.task-editor .reviewer-options legend{font-size:12px;color:#6b7684;font-weight:400;margin-bottom:5px}
 .task-editor .reviewer-options .person-choice>span{padding:3px 8px;font-size:12px}.person-choice input:disabled+span{opacity:.4;cursor:not-allowed}
+
+/* Bound every calendar label to its bar, with reviewer beside assignee names. */
+.schedule-bar{overflow:hidden}
+.schedule-bar .bar-body{overflow:hidden;min-height:0}
+.schedule-bar .bar-title-line{flex-shrink:0;overflow:hidden}
+.schedule-bar .bar-meta{flex-shrink:0;max-width:100%;overflow:hidden}
+.calendar-person-line{display:inline-flex;align-items:center;gap:3px;min-width:0;max-width:100%;overflow:hidden;white-space:nowrap}
+.calendar-status-people{min-width:0;max-width:100%;flex:0 1 auto;overflow:hidden}
+.calendar-avatars{min-width:0;flex:0 1 auto;overflow:hidden}
+.calendar-person-line .reviewer-chip{min-width:0;flex:0 1 auto;max-width:100%;height:14px;box-sizing:border-box;padding:0 3px;gap:2px;font-size:10px;line-height:14px}
+.calendar-person-line .calendar-avatars{flex:0 0 auto;max-width:70%}
+.bar-span-1 .bar-body{justify-content:center;gap:0}
+.bar-span-1 .bar-title-line{height:15px;line-height:15px}
+.bar-span-1 .calendar-person-line .reviewer-chip{flex:0 1 auto}
+.task-meta .task-people{display:flex;align-items:center;flex-wrap:nowrap;gap:4px;min-width:0;overflow:hidden}
+.task-meta .task-people .reviewer-chip{flex:0 1 auto;min-width:0;margin:0}
+.task-meta .task-people .person-chip{flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
