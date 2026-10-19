@@ -4,10 +4,13 @@ import {attachmentBytes} from './attachments.js';
 export class LinkStore{
  constructor(fetcher=(...args)=>fetch(...args),storage=sessionStorage,config={url:SUPABASE_URL,key:SUPABASE_KEY},page=location,history=window.history){
   this.fetcher=fetcher;this.storage=storage;this.config=config;this.linkAccess=true;
-  const fragment=new URLSearchParams(page.hash.slice(1)),token=fragment.get('access');
-  if(token){history.replaceState(null,'',page.pathname+page.search);if(/^[A-Za-z0-9_-]{43}$/.test(token))storage.setItem('workwith-shared-link',token);else storage.removeItem('workwith-shared-link');}
-  this.token=storage.getItem('workwith-shared-link')||'';this.member=storage.getItem('workwith-display-member')||'jh';if(!USERS.some(u=>u.id===this.member))this.member='jh';
+  this.importLink(page,history);this.member=storage.getItem('workwith-display-member')||'jh';if(!USERS.some(u=>u.id===this.member))this.member='jh';
   for(const key of ['workwith-supabase-session','workwith-recovery-pending'])storage.removeItem(key);
+ }
+ importLink(page=location,history=window.history){
+  const token=new URLSearchParams(page.hash.slice(1)).get('access');
+  if(token!==null){history.replaceState(null,'',page.pathname+page.search);if(/^[A-Za-z0-9_-]{43}$/.test(token))this.storage.setItem('workwith-shared-link',token);else this.storage.removeItem('workwith-shared-link');}
+  this.token=this.storage.getItem('workwith-shared-link')||'';return token!==null;
  }
  configured(){return /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(this.config.url)&&Boolean(this.config.key);}
  async request(body,binary=false){
