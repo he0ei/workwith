@@ -1020,3 +1020,13 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
  .task-editor .collaborator-options legend{grid-column:1/-1}
  .task-editor .person-choice>span{width:100%;box-sizing:border-box}
 }
+
+/* Compact previews only; task editing keeps its larger writing controls. */
+.week-card-open{padding:13px 14px;gap:7px}
+.week-card-heading .week-card-title{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;line-height:1.5}
+.week-card-context{display:flex;align-items:center;flex-wrap:wrap;gap:5px 8px;width:100%;min-width:0}
+.week-card-context .week-card-project{width:auto;min-width:0;max-width:100%;flex:0 1 auto}
+.week-card-context .week-card-dates{font-size:11px;line-height:1.5}
+.week-card-description{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;line-height:1.65}
+.week-card-bottom{padding-top:7px;gap:6px}
+@media(max-width:700px){.week-card-open{padding:14px;gap:8px}.week-card-description{font-size:14px;line-height:1.7;-webkit-line-clamp:2}.week-card-context .week-card-dates{font-size:12px}}
