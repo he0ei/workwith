@@ -10,7 +10,7 @@ test('local file design preview loads no protected data, stops polling and rejec
  globalThis.sessionStorage={getItem(){throw Error('must not access session');}};globalThis.localStorage={getItem(){throw Error('must not access business data');}};
  globalThis.fetch=()=>{throw Error('must not request server');};
  const protectedStore={configured:()=>true,read:()=>{throw Error('must not read protected store');}};
- await start();await start(protectedStore);assert.match(nodes.get('#app').innerHTML,/전체 대시보드/);assert.match(nodes.get('#app').innerHTML,/디자인 미리보기/);assert.ok(!nodes.get('#app').innerHTML.includes('공유 DB 연결'));assert.equal(timers.length,0);
+ await start();await start(protectedStore);assert.match(nodes.get('#app').innerHTML,/칸반보드/);assert.ok(!nodes.get('#app').innerHTML.includes('data-nav="dashboard"'));assert.match(nodes.get('#app').innerHTML,/디자인 미리보기/);assert.ok(!nodes.get('#app').innerHTML.includes('공유 DB 연결'));assert.equal(timers.length,0);
  for(const view of ['collab','mine','calendar','projects','minutes','archive','settings'])await listeners.click({target:{closest:s=>s==='[data-nav]'?{dataset:{nav:view}}:null}});
  assert.match(nodes.get('#app').innerHTML,/디자인 미리보기/);listeners.visibilitychange();windowListeners.focus();assert.equal(timers.length,0);
  const store=new DesignPreviewStore();const a=await store.read();assert.equal(a.state.tasks.length,0);assert.equal(a.state.projects.length,0);await assert.rejects(store.change({type:'task.save'}),/저장하지 않습니다/);assert.deepEqual(await store.read(),a);
