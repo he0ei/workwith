@@ -24,14 +24,14 @@ test('external drops, cancellation, outside drop, dated cards and read-only stat
 test('assignment conflicts surface without leaving dragging state active',async()=>{
  const x=setup();x.fail();x.begin();x.over(350);await x.drop();assert.deepEqual(x.errors,['다른 사람이 먼저 수정']);assert.equal(x.control.isDragging(),false);
 });
-test('carryover pointer drop adds dates and keeps original schedule/status/project with captured version',async()=>{
+test('carryover pointer drop extends only the deadline and keeps start/status/project with captured version',async()=>{
  const x=setup();x.snapshot.task.start='2026-10-01';x.snapshot.task.due='2026-10-02';
  // Reuse the same pointer source, marking this scheduled card as a continuation.
  const original=x.listeners.pointerdown;let source;
  const event={target:{closest:s=>s==='[data-plan-task]'?source:null},button:0,pointerId:1,clientX:100,clientY:100};
  source={dataset:{planTask:'t',continueTask:'true'},classList:{add(){},remove(){}}};original(event);x.over(350);await x.drop();
- assert.equal(x.saves.length,1);const [snap,dates,reason,mode]=x.saves[0];assert.equal(mode,'continue');assert.match(reason,/기존 일정 유지/);
+ assert.equal(x.saves.length,1);const [snap,dates,reason,mode]=x.saves[0];assert.equal(mode,'extend');assert.match(reason,/마감일 연장/);
  assert.equal(snap.task.start,'2026-10-01');assert.equal(snap.task.due,'2026-10-02');assert.equal(snap.task.projectId,'p');assert.equal(snap.task.status,'검토 요청');assert.equal(snap.base.revision,3);
- assert.equal(dates.start,undefined);assert.equal(dates.due,undefined);assert.equal(dates.scheduleSlots[0].start,'2026-10-13');
+ assert.equal(dates.start,undefined);assert.equal(dates.due,'2026-10-13');assert.equal(dates.scheduleSlots,undefined);
  let suppressed=false;x.listeners.click({target:{closest:()=>source},preventDefault(){suppressed=true;},stopImmediatePropagation(){}});assert.equal(suppressed,true);
 });

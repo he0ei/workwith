@@ -307,5 +307,15 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   assert.ok(!sections.get('[data-meeting-projects]').innerHTML.includes('value="link-closed"'));assert.ok(!sections.get('[data-intake]').innerHTML.includes('value="link-closed"'));nodes.delete('#minutes-form');
   await create({title:'완료 프로젝트 신규 연결',meetingDate:today(),meetingProjectSelection:'1',meetingProject:['link-closed'],body:'완료 프로젝트의 사후 회의 기록'});const saved=(await pg.repository.load()).state.minutes.find(m=>m.title==='완료 프로젝트 신규 연결');assert.deepEqual(saved.projectIds,['link-closed']);
  });
+ await t.test('new and edited issues persist a separate reviewer role and show it on cards and calendar',async()=>{
+  await click('data-action','task');assert.match(nodes.get('#editor').innerHTML,/검토자 \(선택\)/);assert.match(nodes.get('#editor').innerHTML,/name="reviewer"/);
+  const values={title:'검토 역할 저장 확인',visibility:'shared',projectId:'p',status:'진행 중',priority:'보통',start:today(),due:today(),hours:'1',kpiId:'',url:'',note:'',collaborator:['jh','sy'],reviewer:['sj']};
+  await submit('task',values,'reviewer-ui-task');assert.deepEqual((await item('tasks','reviewer-ui-task')).reviewers,['sj']);
+  await click('data-nav','collab');await listeners.change({target:{id:'assignee-filter',value:'',dataset:{}}});assert.match(nodes.get('#app').innerHTML,/검토자: 정승재/);
+  await click('data-nav','calendar');await listeners.change({target:{id:'calendar-member',value:'',dataset:{}}});assert.match(nodes.get('#app').innerHTML,/reviewer-chip/);
+  await click('data-action','task','reviewer-ui-task');assert.match(nodes.get('#editor').innerHTML,/name="reviewer" value="sj" checked/);
+  await submit('task',{...values,reviewer:['ceo']},'reviewer-ui-task');assert.deepEqual((await item('tasks','reviewer-ui-task')).reviewers,['ceo']);
+  await click('data-action','task','reviewer-ui-task');await submit('task',{...values,reviewer:[]},'reviewer-ui-task');assert.deepEqual((await item('tasks','reviewer-ui-task')).reviewers,[]);
+ });
  await pg.close();
 });

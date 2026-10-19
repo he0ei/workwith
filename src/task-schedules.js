@@ -1,6 +1,8 @@
 // Extra periods belong to the same task; gaps between periods remain unscheduled.
 export function taskSchedules(task){
- return [...(task.start||task.due?[{id:'',start:task.start||task.due,due:task.due||task.start}]:[]),...(task.scheduleSlots||[])];
+ const primary=task.start||task.due?{id:'',start:task.start||task.due,due:task.due||task.start}:null;
+ // Keep older additional periods in storage, but never draw them twice inside an extended primary period.
+ return [...(primary?[primary]:[]),...(task.scheduleSlots||[]).filter(s=>!primary||s.start<primary.start||s.due>primary.due)];
 }
 export const overlapsSchedule=(task,range)=>taskSchedules(task).some(s=>s.start<=range.end&&s.due>=range.start);
 export function scheduleBars(task,range){
@@ -22,4 +24,13 @@ export function scheduleValue(snapshot,dates){
  const record=snapshot.record;
  if(!record?.scheduleSlots?.some(s=>s.id===snapshot.segmentId))throw Error('추가 진행 일정을 찾을 수 없습니다.');
  return {...record,scheduleSlots:record.scheduleSlots.map(s=>s.id===snapshot.segmentId?{...s,...dates}:s)};
+}
+
+export function extendDeadline(task,date){
+ if(task.status==='완료')throw Error('완료된 업무의 마감일은 연장할 수 없습니다.');
+ const valid=typeof date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&!Number.isNaN(Date.parse(date))&&new Date(date).toISOString().slice(0,10)===date;
+ if(!valid)throw Error('마감일 날짜를 확인해 주세요.');
+ const end=taskSchedules(task).map(s=>s.due).sort().at(-1);
+ if(!end||date<=end)throw Error('기존 일정 이후 날짜에 놓아 마감일을 연장해 주세요.');
+ return {due:date};
 }
