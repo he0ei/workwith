@@ -337,5 +337,18 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-action','calendar-view');await listeners.keydown({key:'ArrowRight',target,preventDefault(){}});delete document.elementFromPoint;
   await click('data-action','mobile-week','next');await click('data-action','month-day','2026-11-01');assert.match(nodes.get('#app').innerHTML,/2026년 11월/);assert.match(nodes.get('#app').innerHTML,/11-01 업무/);assert.deepEqual((await pg.repository.load()).state,before.state);
  });
+ await t.test('unscheduled weekly queue drop uses today and persists the same task with its original roles and content',async()=>{
+  await click('data-action','close');await click('data-nav','calendar');await click('data-action','calendar-view');
+  const values={title:'주간 영역 배정 확인',visibility:'shared',projectId:'gowoori',status:'검토 요청',priority:'높음',collaborator:['sj','sy'],reviewer:['jh'],start:'',due:'',hours:'2',kpiId:'',url:'',note:'원래 업무 설명 보존'};
+  await click('data-action','task');await submit('task',values,'weekly-assign');assert.ok(!nodes.get('#app').innerHTML.includes('data-week-drop='));
+  await click('data-action','calendar-edit');let html=nodes.get('#app').innerHTML;assert.match(html,/data-week-drop=/);assert.ok(html.indexOf('unscheduled-tray')<html.indexOf('work-week-grid'));assert.match(html,new RegExp('놓으면 '+today()+' 배정'));
+  const before=await pg.repository.load(),taskBefore=await item('tasks','weekly-assign'),source={dataset:{planTask:'weekly-assign'},classList:{add(){},remove(){}}},week={dataset:{weekDrop:weekRange(today()).start},classList:{add(){},remove(){}}};
+  document.elementFromPoint=()=>({closest:s=>s==='[data-week-drop]'?week:null});
+  const target={closest:s=>s==='[data-plan-task]'?source:null};
+  await listeners.pointerdown({target,button:0,pointerType:'touch',pointerId:61,clientX:100,clientY:100});await listeners.pointermove({pointerId:61,clientX:250,clientY:250,cancelable:true,preventDefault(){}});await listeners.pointerup({pointerId:61,clientX:250,clientY:250});assert.deepEqual((await pg.repository.load()).state,before.state);
+  await listeners.pointerdown({target,button:0,pointerType:'mouse',pointerId:62,clientX:100,clientY:100});await listeners.pointermove({pointerId:62,clientX:250,clientY:250,cancelable:true,preventDefault(){}});await listeners.pointerup({pointerId:62,clientX:250,clientY:250});delete document.elementFromPoint;
+  const after=await pg.repository.load(),saved=await item('tasks','weekly-assign');assert.equal(after.state.tasks.length,before.state.tasks.length);assert.equal(saved.start,today());assert.equal(saved.due,today());for(const key of ['title','note','projectId','assignee','collaborators','reviewers','status','priority','hours','visibility'])assert.deepEqual(saved[key],taskBefore[key]);assert.ok(!nodes.get('#app').innerHTML.includes('data-plan-task="weekly-assign"'));assert.match(nodes.get('#app').innerHTML,/data-week-task="weekly-assign"/);
+  await click('data-action','calendar-view');assert.ok(!nodes.get('#app').innerHTML.includes('data-week-drop='));
+ });
  await pg.close();
 });

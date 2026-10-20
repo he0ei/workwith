@@ -1030,3 +1030,20 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
 .week-card-description{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;line-height:1.65}
 .week-card-bottom{padding-top:7px;gap:6px}
 @media(max-width:700px){.week-card-open{padding:14px;gap:8px}.week-card-description{font-size:14px;line-height:1.7;-webkit-line-clamp:2}.week-card-context .week-card-dates{font-size:12px}}
+
+/* Unscheduled cards can be placed directly into a weekly work queue. */
+.unscheduled-tray{margin:0 0 16px}
+.unscheduled-tray>summary{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.unscheduled-tray>summary small{margin-left:auto;font-size:12px;font-weight:400;color:#6b7684}
+.week-drop-hint{margin:0 14px 12px;padding:7px 10px;border:1px dashed #c3d4ed;border-radius:8px;color:#51749f;font-size:12px;line-height:1.5;background:#fff}
+.work-week-column.plan-drop-target{outline:2px solid #3182f6;outline-offset:2px;background:#eaf2ff}
+.is-editing .work-week-column[data-week-drop]{transition:background-color .12s,outline-color .12s}
+.work-calendar.is-editing .planning-grip{display:inline-flex;align-items:center;align-self:center;color:#8e9bad}
+.work-calendar.is-editing [data-plan-task]{cursor:grab}
+.work-calendar.is-editing [data-plan-task].planning-dragging{cursor:grabbing}
+@media(pointer:coarse){.unscheduled-tray>summary small{display:none}.week-drop-hint{display:none}.work-calendar.is-editing .planning-grip{display:none}}
+.unscheduled-tray .week-extra-cards{grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr))}
+.unscheduled-tray>summary{list-style:none}
+.unscheduled-tray>summary::-webkit-details-marker{display:none}
+.unscheduled-tray>summary::before{content:'▸';font-size:11px;color:#87919f}
+.unscheduled-tray[open]>summary::before{content:'▾'}
