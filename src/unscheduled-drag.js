@@ -1,15 +1,21 @@
 import {extendDeadline} from './task-schedules.js';
-import {shiftDay} from './weekly-calendar.js';
+import {today,dateOK} from './model.js';
+import {shiftDay,weekRange} from './weekly-calendar.js';
+// The actual current week uses today's Korean date; other weeks use Sunday.
+export function weekDropDate(start,now=today()){
+ if(!start||!dateOK(start)||weekRange(start).start!==start)return '';
+ return start===weekRange(now).start?now:start;
+}
 export function dropDate(board,x){
  const rect=board.getBoundingClientRect();if(rect.width<=0||x<rect.left||x>=rect.right)return '';
  return shiftDay(board.dataset.weekTimeline,Math.floor((x-rect.left)/(rect.width/7)));
 }
 // Pointer capture keeps assignment consistent with moving/resizing scheduled bars.
-export function installUnscheduledDrag(root,{capture,save,error,canStart,announce}){
+export function installUnscheduledDrag(root,{capture,save,error,canStart,announce,now=today}){
  let active=null,hover=null,suppress=null,ghost=null;
  const clearHover=()=>{hover?.classList.remove('plan-drop-target');hover=null;};
  const clear=()=>{ghost?.remove();ghost=null;const a=active;active=null;a?.source.classList.remove('planning-dragging');if(a?.source.hasPointerCapture?.(a.pointerId))a.source.releasePointerCapture(a.pointerId);clearHover();announce('');};
- const destination=e=>{const board=root.elementFromPoint?.(e.clientX,e.clientY)?.closest('[data-week-timeline]');return {board,date:board?dropDate(board,e.clientX):''};};
+ const destination=e=>{const hit=root.elementFromPoint?.(e.clientX,e.clientY),week=hit?.closest('[data-week-drop]');if(week?.dataset.weekDrop)return {board:week,date:weekDropDate(week.dataset.weekDrop,now())};const board=hit?.closest('[data-week-timeline]');return {board,date:board?dropDate(board,e.clientX):''};};
  root.addEventListener('pointerdown',e=>{
   const source=e.target.closest?.('[data-plan-task]');if(!source||e.button!==0||active||!canStart(e))return;
   if(e.target.closest('input,select'))return;
@@ -23,7 +29,7 @@ export function installUnscheduledDrag(root,{capture,save,error,canStart,announc
   if(!ghost&&root.body&&active.source.cloneNode){ghost=active.source.cloneNode(true);ghost.removeAttribute('data-plan-task');ghost.removeAttribute('data-action');ghost.classList.add('planning-ghost');ghost.inert=true;ghost.setAttribute('aria-hidden','true');root.body.append(ghost);}
   if(ghost)ghost.style.transform=`translate3d(${e.clientX+14}px,${e.clientY+14}px,0)`;if(e.cancelable)e.preventDefault();
   clearHover();const {board,date}=destination(e);if(!date){announce('원하는 날짜에 놓아 주세요.');return;}
-  hover=board.querySelector('[data-plan-date="'+date+'"]');hover?.classList.add('plan-drop-target');announce(date+(active.source.dataset.continueTask?'까지 마감 연장 · 시작일 유지 · 놓으면 저장':'에 일정 배정 · 놓으면 저장'));
+  hover=board.dataset.weekDrop?board:board.querySelector('[data-plan-date="'+date+'"]');hover?.classList.add('plan-drop-target');announce(date+(active.source.dataset.continueTask?'까지 마감 연장 · 시작일 유지 · 놓으면 저장':'에 일정 배정 · 놓으면 저장'));
  });
  root.addEventListener('pointerup',async e=>{
   if(!active||e.pointerId!==active.pointerId)return;const a=active,{date,board}=destination(e);
