@@ -350,5 +350,29 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   const after=await pg.repository.load(),saved=await item('tasks','weekly-assign');assert.equal(after.state.tasks.length,before.state.tasks.length);assert.equal(saved.start,today());assert.equal(saved.due,today());for(const key of ['title','note','projectId','assignee','collaborators','reviewers','status','priority','hours','visibility'])assert.deepEqual(saved[key],taskBefore[key]);assert.ok(!nodes.get('#app').innerHTML.includes('data-plan-task="weekly-assign"'));assert.match(nodes.get('#app').innerHTML,/data-week-task="weekly-assign"/);
   await click('data-action','calendar-view');assert.ok(!nodes.get('#app').innerHTML.includes('data-week-drop='));
  });
+ await t.test('compact cards omit absent descriptions and collect only incomplete visible work below the month',async()=>{
+  await click('data-action','close');await click('data-nav','calendar');await click('data-action','calendar-view');
+  const values={title:'간단 업무 확인',visibility:'shared',projectId:'gowoori',status:'진행 중',priority:'높음',collaborator:['sj','sy'],reviewer:['jh'],start:today(),due:today(),hours:'2',kpiId:'',url:'',note:''};
+  await click('data-action','task');await submit('task',values,'compact-empty');
+  await click('data-action','task');await submit('task',{...values,title:'지난 마감 확인',start:shiftDay(today(),-3),due:shiftDay(today(),-1)},'compact-late');
+  let html=nodes.get('#app').innerHTML,card=html.match(/<article[^>]*data-week-task="compact-empty"[^>]*>[\s\S]*?<\/article>/)[0];
+  assert.ok(!card.includes('week-card-description'));assert.ok(!html.includes('아직 작성된 업무 설명이 없습니다.'));assert.match(html,/판옵티콘 PM weekly 업무관리/);assert.match(card,/avatar-sj[^>]*>승</);
+  assert.ok(html.indexOf('class="incomplete-work"')>html.indexOf('class="work-month"'));let collection=html.slice(html.indexOf('data-incomplete-list'));
+  assert.match(collection,/data-week-task="compact-empty"/);assert.match(collection,/is-overdue[^>]*data-week-task="compact-late"/);assert.ok(!collection.includes('is-completed'));assert.match(collection,/마감일 경과/);
+  await listeners.change({target:{id:'calendar-member',value:'jh',dataset:{}}});collection=nodes.get('#app').innerHTML.split('data-incomplete-list')[1];assert.ok(!collection.includes('data-week-task="compact-empty"'));
+  await listeners.change({target:{id:'calendar-member',value:'',dataset:{}}});
+ });
+ await t.test('quick complete updates only status and completion date, stays on calendar and never opens an editor',async()=>{
+  await click('data-action','month-today');const before=await item('tasks','compact-empty');await click('data-action','task-complete','compact-empty');const saved=await item('tasks','compact-empty');
+  assert.equal(saved.status,'완료');assert.equal(saved.completedAt,today());assert.deepEqual({...saved,status:before.status,completedAt:before.completedAt},before);assert.equal(nodes.get('#editor').open,false);
+  const html=nodes.get('#app').innerHTML,card=html.match(/<article[^>]*data-week-task="compact-empty"[^>]*>[\s\S]*?<\/article>/)[0];assert.match(card,/is-completed/);assert.ok(!card.includes('data-action="task-complete"'));assert.match(html,/schedule-completed[^>]*data-schedule-bar="compact-empty"/);assert.ok(!html.split('data-incomplete-list')[1].includes('data-week-task="compact-empty"'));
+  const snapshot=await pg.repository.load();await click('data-action','task-complete','compact-empty');assert.deepEqual((await pg.repository.load()).state,snapshot.state);
+  await click('data-nav','calendar');assert.match(nodes.get('#app').innerHTML,/is-completed[^>]*data-week-task="compact-empty"/);
+ });
+ await t.test('quick complete rejects a stale version without overwriting another edit',async()=>{
+  const snapshot=await pg.repository.load(),task=snapshot.state.tasks.find(x=>x.id==='compact-late');
+  await mutate(pg.repository,{action:{type:'task.save',value:{...task,note:'다른 작성자의 내용'}},revision:snapshot.state.revision,baseVersion:snapshot.versions['tasks:compact-late']},'sj');
+  await click('data-action','task-complete','compact-late');assert.match(nodes.get('#toast').textContent,/다른 사람이 먼저 수정/);const saved=await item('tasks','compact-late');assert.equal(saved.note,'다른 작성자의 내용');assert.equal(saved.status,'진행 중');
+ });
  await pg.close();
 });
