@@ -26,7 +26,7 @@ test('backlog drag extends deadline, keeps original start and metadata, and does
  assert.equal(calendarDayTasks(saved,'jh','2026-10-12').length,1);assert.equal(weeklyCalendar(saved,'jh','2026-10-19','2026-10-19').overdue.length,0);
  assert.equal(monthWeeks('2026-10',[next]).filter(w=>w.tasks.length).length,3);assert.deepEqual(old,before);
  assert.throws(()=>extendDeadline(old,'2026-10-07'),/이후/);assert.throws(()=>extendDeadline(old,'2026-10-06'),/이후/);assert.throws(()=>extendDeadline(old,'2026-02-30'),/날짜/);assert.throws(()=>extendDeadline({...old,status:'완료'},'2026-10-19'),/완료/);
- assert.throws(()=>change(state(old),{type:'task.save',value:{...old,...dates}},'jh'),/사유/);
+ assert.equal(change(state(old),{type:'task.save',value:{...old,...dates}},'jh').tasks[0].due,'2026-10-19');
 });
 test('legacy extra periods remain stored, but an extended interval draws once and counts once',()=>{
  const old={...task(),scheduleSlots:[{id:'legacy',start:'2026-10-12',due:'2026-10-14'}]},before=structuredClone(old);

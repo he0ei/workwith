@@ -42,7 +42,7 @@ test('overlapping periods count a task once; completion remains visible in every
 });
 test('server model preserves additional periods through normal edits and status changes, and rejects malformed schedules',()=>{
  const old=task(),s=state(old),value={...old,...continueSchedule(old,'2026-10-19','a')};
- assert.throws(()=>change(s,{type:'task.save',value},'jh'),/사유/);
+ assert.deepEqual(change(s,{type:'task.save',value},'jh').tasks[0].scheduleSlots,value.scheduleSlots);
  const saved=change(s,{type:'task.save',value,reason:'이어서 진행'},'jh');
  const edited=change(saved,{type:'task.save',value:{...old,title:'제목 수정'}},'jh');
  assert.deepEqual(edited.tasks[0].scheduleSlots,value.scheduleSlots);

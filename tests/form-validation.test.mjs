@@ -2,9 +2,9 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {validateEditor,showFieldError,clearFieldErrors} from '../src/form-validation.js';
 import {filterTasks} from '../src/model.js';
-test('schedule errors point to due/reason and block before submission',()=>{
+test('schedule errors point to due; a schedule change reason is optional',()=>{
  const form={},old={start:'2026-10-11',due:'2026-10-17'},value={title:'기획',visibility:'shared',projectId:'p',start:'2026-10-12',due:'2026-10-18'};
- assert.throws(()=>validateEditor(form,'task',value,old),e=>e.field==='reason'&&e.message==='일정 변경 시 사유를 입력해야 합니다.');
+ assert.doesNotThrow(()=>validateEditor(form,'task',value,old));
  assert.doesNotThrow(()=>validateEditor(form,'task',{...value,reason:'일정 조정'},old));
  assert.throws(()=>validateEditor(form,'project',{...value,due:'2026-10-10'},old),e=>e.field==='due');
  assert.throws(()=>validateEditor(form,'task',{...value,projectId:''}),e=>e.field==='projectId');

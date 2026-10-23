@@ -202,12 +202,12 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await submit('task',{...values,projectId:'gowoori'},'heading-task');const saved=await item('tasks','heading-task');
   assert.equal(saved.title,'MYMAM 상세페이지 기획');assert.equal(saved.projectId,'gowoori');assert.equal(saved.note,values.note);
  });
- await t.test('save blocks invalid dates and missing reason before writing, preserving the editor',async()=>{
+ await t.test('save blocks invalid dates before writing, and saves a schedule change without a reason',async()=>{
   const old=await item('tasks','t-collab');await click('data-action','task','t-collab');
   await submit('task',{...old,start:'2026-10-20',due:'2026-10-19',hours:'1'},old.id);
   assert.match(nodes.get('#form-error').textContent,/마감일은 시작일/);assert.equal(nodes.get('#editor').open,true);assert.equal((await item('tasks',old.id)).start,old.start);
   await submit('task',{...old,start:'2026-10-20',due:'2026-10-21',hours:'1'},old.id);
-  assert.match(nodes.get('#form-error').textContent,/일정 변경 시 사유를 입력해야 합니다/);assert.equal((await item('tasks',old.id)).due,old.due);
+  assert.equal((await item('tasks',old.id)).due,'2026-10-21');
  });
  await t.test('work-first calendar shows three week queues with descriptions and month below, default viewer never saves',async()=>{
   const range=weekRange(today()),next=shiftDay(range.start,7),previous=shiftDay(range.start,-7);

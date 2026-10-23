@@ -78,10 +78,9 @@ export function change(state,action,actor){
   if(v.attachment===undefined&&old?.attachment)t.attachment=old.attachment;
   if(v.scheduleSlots===undefined&&old?.scheduleSlots)t.scheduleSlots=structuredClone(old.scheduleSlots);
   const datesChanged=old&&(old.start!==t.start||old.due!==t.due||JSON.stringify(old.scheduleSlots||[])!==JSON.stringify(t.scheduleSlots||[]));
-  required(!datesChanged||action.reason?.trim(),'일정 변경 사유를 입력하세요.');
   if(t.status==='완료')required(t.dependencies.every(id=>s.tasks.find(x=>x.id===id)?.status==='완료'),'선행 업무를 완료한 후 완료 처리하세요.');
   if(old)s.tasks[s.tasks.indexOf(old)]=t;else s.tasks.push(t);
-  log(s,actor,`${old?'업무 수정':'업무 생성'}: ${t.title}${datesChanged?` · 계획 ${old.start||'미정'} → ${t.start||'미정'}, 마감 ${old.due||'미정'} → ${t.due||'미정'} · 사유: ${action.reason}`:''}`,t);
+  log(s,actor,`${old?'업무 수정':'업무 생성'}: ${t.title}${datesChanged?` · 계획 ${old.start||'미정'} → ${t.start||'미정'}, 마감 ${old.due||'미정'} → ${t.due||'미정'}${action.reason?.trim()?` · 사유: ${action.reason.trim()}`:''}`:''}`,t);
  }else if(action.type==='task.delete'){
   const t=s.tasks.find(t=>t.id===action.id);required(t&&visible(t,actor),'삭제할 수 없는 업무입니다.');s.tasks=s.tasks.filter(x=>x.id!==t.id);s.tasks.forEach(x=>x.dependencies=x.dependencies.filter(id=>id!==t.id));log(s,actor,`업무 삭제: ${t.title}`,t);
  }else if(action.type==='project.delete'){
@@ -90,9 +89,9 @@ export function change(state,action,actor){
   s.projects=s.projects.filter(x=>x.id!==p.id);for(const key of ['kpis','artifacts'])s[key]=s[key].filter(x=>x.projectId!==p.id);s.minutes.forEach(m=>{if(m.projectId===p.id)m.projectId='';if(m.projectIds)m.projectIds=m.projectIds.filter(id=>id!==p.id);});log(s,actor,`프로젝트 및 연결 업무 ${ids.length}개 삭제: ${p.title}`,{projectId:p.id});
  }else if(['project.save','kpi.save','artifact.save','minutes.save'].includes(action.type)){
   const key={'project.save':'projects','kpi.save':'kpis','artifact.save':'artifacts','minutes.save':'minutes'}[action.type];const i=s[key].findIndex(x=>x.id===v.id),old=s[key][i];
-  const datesChanged=key==='projects'&&old&&(old.start!==v.start||old.due!==v.due);required(!datesChanged||action.reason?.trim(),'일정 변경 사유를 입력하세요.');
+  const datesChanged=key==='projects'&&old&&(old.start!==v.start||old.due!==v.due);
   const saved=key==='projects'?{...v,status:v.status??old?.status??'진행 중',priority:v.priority??old?.priority??'보통',completedAt:(v.status??old?.status)==='완료'?(old?.completedAt||today()):''}:v;
-  if(i<0)s[key].push(saved);else s[key][i]=saved;log(s,actor,`${key==='projects'&&old&&projectStatus(old)!==projectStatus(saved)?(saved.status==='완료'?'프로젝트 완료':'프로젝트 재개'):i<0?'등록':'수정'}: ${v.title}${datesChanged?` · 시작 ${old.start||'미정'} → ${v.start||'미정'}, 마감 ${old.due||'미정'} → ${v.due||'미정'} · 사유: ${action.reason}`:''}`,saved);
+  if(i<0)s[key].push(saved);else s[key][i]=saved;log(s,actor,`${key==='projects'&&old&&projectStatus(old)!==projectStatus(saved)?(saved.status==='완료'?'프로젝트 완료':'프로젝트 재개'):i<0?'등록':'수정'}: ${v.title}${datesChanged?` · 시작 ${old.start||'미정'} → ${v.start||'미정'}, 마감 ${old.due||'미정'} → ${v.due||'미정'}${action.reason?.trim()?` · 사유: ${action.reason.trim()}`:''}`:''}`,saved);
  }else if(['kpi.delete','artifact.delete','minutes.delete'].includes(action.type)){
   const key={'kpi.delete':'kpis','artifact.delete':'artifacts','minutes.delete':'minutes'}[action.type];const item=s[key].find(x=>x.id===action.id);required(item,'항목이 없습니다.');s[key]=s[key].filter(x=>x.id!==action.id);if(key==='kpis')s.tasks.forEach(t=>{if(t.kpiId===action.id)t.kpiId='';});log(s,actor,`삭제: ${item.title}`,item);
  }else throw Error('알 수 없는 작업입니다.');
