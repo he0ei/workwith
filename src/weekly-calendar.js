@@ -2,8 +2,8 @@ import {taskSchedules,overlapsSchedule} from './task-schedules.js';
 import {today,dateOK,visibleTasks,participates,PRIORITIES,taskStatus} from './model.js';
 // Keep dates out of tie-breaking so moving a bar does not reshuffle its row.
 export function calendarOrder(a,b){
- const paused=t=>taskStatus(t.status)==='검토 요청',rank=t=>PRIORITIES.indexOf(PRIORITIES.includes(t.priority)?t.priority:'보통');
- return Number(paused(a))-Number(paused(b))||rank(a)-rank(b)||a.title.localeCompare(b.title,'ko')||a.id.localeCompare(b.id);
+ const stage=t=>taskStatus(t.status)==='완료'?2:taskStatus(t.status)==='검토 요청'?1:0,rank=t=>PRIORITIES.indexOf(PRIORITIES.includes(t.priority)?t.priority:'보통');
+ return stage(a)-stage(b)||rank(a)-rank(b)||a.title.localeCompare(b.title,'ko')||a.id.localeCompare(b.id);
 }
 export function shiftDay(date,days){
  if(!date||!dateOK(date)||!Number.isInteger(days))throw Error('주간 일정 날짜 오류');

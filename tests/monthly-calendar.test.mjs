@@ -45,8 +45,8 @@ test('keyboard moves a week, errors surface and saving blocks additional changes
 test('drag completion suppresses accidental editor clicks',async()=>{
  const x=setup();x.begin();x.move();await x.end();let suppressed=false;x.listeners.click({target:x.target(),preventDefault(){suppressed=true;},stopImmediatePropagation(){}});assert.equal(suppressed,true);
 });
-test('monthly strips use priority first and paused last without changing the input records',()=>{
+test('monthly strips keep completed work below active and paused work without changing records',()=>{
  const input=[{...task,id:'pause',title:'가',priority:'높음'}, {...task,id:'normal',title:'나',status:'진행 중',priority:'보통'},{...task,id:'high',title:'하',status:'완료',priority:'높음'},{...task,id:'low',title:'다',status:'예정',priority:'낮음'}];
  const before=structuredClone(input),weeks=monthWeeks('2026-10',input);
- assert.deepEqual(weeks.find(w=>w.start==='2026-10-11').tasks.map(t=>t.id),['high','normal','low','pause']);assert.deepEqual(input,before);
+ assert.deepEqual(weeks.find(w=>w.start==='2026-10-11').tasks.map(t=>t.id),['normal','low','pause','high']);assert.deepEqual(input,before);
 });
