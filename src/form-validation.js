@@ -8,7 +8,7 @@ export function validateEditor(form,kind,values,old){
  for(const input of form.querySelectorAll?.('input,select,textarea')||[]){
   if(input.disabled||!input.willValidate||input.validity.valid)continue;
   const label=[...(input.labels?.[0]?.childNodes||[])].filter(node=>node.nodeType===3).map(node=>node.textContent).join('').trim()||'값';
-  if(input.validity.valueMissing)fail(input.name,({title:'제목을 입력해 주세요.',projectId:'연결할 프로젝트를 선택해 주세요.',reason:'일정 변경 시 사유를 입력해야 합니다.'})[input.name]||`${label} 항목을 입력하거나 선택해 주세요.`);
+  if(input.validity.valueMissing)fail(input.name,({title:'제목을 입력해 주세요.',projectId:'연결할 프로젝트를 선택해 주세요.'})[input.name]||`${label} 항목을 입력하거나 선택해 주세요.`);
   if(input.validity.typeMismatch)fail(input.name,input.type==='url'?'https://로 시작하는 올바른 링크를 입력해 주세요.':'올바른 형식으로 입력해 주세요.');
   if(input.validity.rangeUnderflow||input.validity.rangeOverflow)fail(input.name,`${input.min||0} ~ ${input.max||'허용 범위'} 사이의 값을 입력해 주세요.`);
   if(input.validity.badInput)fail(input.name,'숫자 또는 날짜를 올바르게 입력해 주세요.');
@@ -18,7 +18,6 @@ export function validateEditor(form,kind,values,old){
  if(values.url&&!safeURL(values.url))fail('url','http:// 또는 https://로 시작하는 올바른 링크를 입력해 주세요.');
  if(['task','project'].includes(kind)){
   if(values.start&&values.due&&values.due<values.start)fail('due','마감일은 시작일과 같거나 이후여야 합니다.');
-  if(old&&((old.start||'')!==(values.start||'')||(old.due||'')!==(values.due||''))&&!values.reason?.trim())fail('reason','일정 변경 시 사유를 입력해야 합니다.');
  }
  if(kind==='task'&&form.dataset?.sharedLink!=='true'&&values.visibility==='shared'&&!values.projectId)fail('projectId','공유 업무를 연결할 프로젝트를 선택해 주세요.');
 }
