@@ -1,6 +1,8 @@
 export const USERS = [{id:'ceo',name:'대표님',initial:'대'},{id:'sj',name:'정승재',initial:'승'},{id:'sy',name:'양승연',initial:'연'},{id:'jh',name:'최재희',initial:'희'}];
 // Reviewer-only people: they can be chosen as reviewers but are not assignees or app members.
 export const REVIEWERS=[...USERS,{id:'heo',name:'허이사님',initial:'허'},{id:'jang',name:'장팀장님',initial:'장'}];
+// Offered in the editor; others stay valid so earlier assignments keep saving.
+export const REVIEWER_CHOICES=['ceo','sj','heo','jang'];
 import {validAttachment,ATTACHMENT_BUCKET,TASK_ATTACHMENT_BUCKET} from './attachments.js';
 export const STATUSES=['예정','진행 중','검토 요청','완료'];
 export const taskStatus=status=>status==='보류 중'?'검토 요청':status;
