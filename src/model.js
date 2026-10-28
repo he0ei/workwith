@@ -1,4 +1,6 @@
 export const USERS = [{id:'ceo',name:'대표님',initial:'대'},{id:'sj',name:'정승재',initial:'승'},{id:'sy',name:'양승연',initial:'연'},{id:'jh',name:'최재희',initial:'희'}];
+// Reviewer-only people: they can be chosen as reviewers but are not assignees or app members.
+export const REVIEWERS=[...USERS,{id:'heo',name:'허이사님',initial:'허'},{id:'jang',name:'장팀장님',initial:'장'}];
 import {validAttachment,ATTACHMENT_BUCKET,TASK_ATTACHMENT_BUCKET} from './attachments.js';
 export const STATUSES=['예정','진행 중','검토 요청','완료'];
 export const taskStatus=status=>status==='보류 중'?'검토 요청':status;
@@ -18,7 +20,7 @@ export function safeURL(value){if(!value)return '';try{const u=new URL(value);re
 export const visible=(task,user)=>task.visibility==='shared'||task.owner===user;
 export const visibleTasks=(state,user)=>state.tasks.filter(t=>visible(t,user));
 export const taskPeople=task=>USERS.filter(u=>u.id===task.assignee||(task.visibility==='shared'&&(task.collaborators||[]).includes(u.id))).map(u=>u.id);
-export const taskReviewers=task=>USERS.filter(u=>(task.reviewers||[]).includes(u.id)).map(u=>u.id);
+export const taskReviewers=task=>REVIEWERS.filter(u=>(task.reviewers||[]).includes(u.id)).map(u=>u.id);
 export const participates=(task,user)=>taskPeople(task).includes(user);
 export function validate(state){
  required(state&&state.version===1&&Number.isInteger(state.revision)&&state.revision>=0,'지원하지 않는 저장 데이터 형식입니다.');
@@ -38,7 +40,7 @@ export function validate(state){
   required(Array.isArray(collaborators)&&collaborators.length<=USERS.length&&new Set(collaborators).size===collaborators.length&&collaborators.every(id=>id&&userOK(id)&&id!==t.assignee),'협업자 값 오류');
   required(t.visibility!=='private'||collaborators.length===0,'개인 업무에는 협업자를 지정할 수 없습니다.');
   const reviewers=t.reviewers??[];
-  required(Array.isArray(reviewers)&&reviewers.length<=USERS.length&&new Set(reviewers).size===reviewers.length&&reviewers.every(id=>id&&userOK(id)&&!taskPeople(t).includes(id)),'검토자는 담당자와 다른 팀원으로 선택하세요.');
+  required(Array.isArray(reviewers)&&reviewers.length<=REVIEWERS.length&&new Set(reviewers).size===reviewers.length&&reviewers.every(id=>id&&REVIEWERS.some(u=>u.id===id)&&!taskPeople(t).includes(id)),'검토자는 담당자와 다른 팀원으로 선택하세요.');
   required(t.visibility!=='private'||reviewers.length===0,'개인 업무에는 검토자를 지정할 수 없습니다.');
   required(str(t.title,200)&&t.title.trim()&&str(t.note)&&userOK(t.assignee)&&userOK(t.owner)&&t.owner&&['shared','private'].includes(t.visibility)&&STATUSES.includes(taskStatus(t.status))&&PRIORITIES.includes(t.priority),'업무 값 오류');
   required((!t.projectId||project(t.projectId))&&(t.visibility!=='private'||(!t.projectId&&t.assignee===t.owner)),'개인 업무는 소유자에게만 배정하며 프로젝트에 연결할 수 없습니다.');

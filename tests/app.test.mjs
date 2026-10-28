@@ -310,6 +310,9 @@ test('shared UI uses authenticated API, preserves editing and never stores busin
   await click('data-nav','calendar');await listeners.change({target:{id:'calendar-member',value:'',dataset:{}}});assert.match(nodes.get('#app').innerHTML,/reviewer-chip/);
   await click('data-action','calendar-edit');await click('data-action','task','reviewer-ui-task');assert.match(nodes.get('#editor').innerHTML,/name="reviewer" value="sj" checked/);
   await submit('task',{...values,reviewer:['ceo']},'reviewer-ui-task');assert.deepEqual((await item('tasks','reviewer-ui-task')).reviewers,['ceo']);
+  await click('data-action','task','reviewer-ui-task');assert.match(nodes.get('#editor').innerHTML,/name="reviewer" value="heo"[^>]*><span>허이사님/);assert.match(nodes.get('#editor').innerHTML,/name="reviewer" value="jang"[^>]*><span>장팀장님/);assert.doesNotMatch(nodes.get('#editor').innerHTML,/name="collaborator" value="heo"/);assert.doesNotMatch(nodes.get('#editor').innerHTML,/name="reason"/);
+  await submit('task',{...values,reviewer:['heo','jang']},'reviewer-ui-task');assert.deepEqual((await item('tasks','reviewer-ui-task')).reviewers,['heo','jang']);
+  await click('data-nav','collab');await listeners.change({target:{id:'assignee-filter',value:'',dataset:{}}});assert.match(nodes.get('#app').innerHTML,/검토자: 허이사님 · 장팀장님/);
   await click('data-action','task','reviewer-ui-task');await submit('task',{...values,reviewer:[]},'reviewer-ui-task');assert.deepEqual((await item('tasks','reviewer-ui-task')).reviewers,[]);
  });
  await t.test('delivery paste creates one project-linked issue and preserves original archive, then links subsequent delivery without duplicates',async()=>{
