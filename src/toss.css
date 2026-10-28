@@ -804,6 +804,7 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
 .work-calendar{min-width:0;--work-line:#e7ebf0}
 .work-calendar-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .week-anchor-controls,.calendar-control-right{display:flex;align-items:center;gap:8px;min-width:0}
+.calendar-control-right{margin-left:auto}
 .week-anchor-controls label{display:flex;align-items:center;gap:8px;color:#6b7684;font-size:13px;white-space:nowrap}
 .week-anchor-controls input{width:148px;min-height:36px;padding:7px 10px;font-size:14px;background:#fff;border:1px solid var(--work-line);border-radius:9px}
 .calendar-control-right select{width:124px;min-height:36px;padding:7px 10px;font-size:13px}
@@ -1065,6 +1066,17 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
 .week-work-card.is-overdue{border-color:#df9b83;box-shadow:inset 3px 0 #d5704d}
 .week-work-card.is-overdue .week-card-dates{color:#b83e24;font-weight:650}
 .incomplete-work{margin-top:24px}
+.incomplete-work>summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;padding:12px 14px;border:1px solid var(--work-line);border-radius:12px;background:#fff}
+.incomplete-work>summary::-webkit-details-marker{display:none}
+.incomplete-work[open]>summary{margin-bottom:12px}
+.incomplete-toggle-label{margin-left:auto;font-size:13px;font-weight:600;color:#2365d1}
+.incomplete-toggle-label::after{content:'';display:inline-block;width:6px;height:6px;margin-left:6px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-2px) rotate(45deg)}
+.incomplete-work[open] .incomplete-toggle-label::after{transform:translateY(1px) rotate(-135deg)}
+/* Week/month tabs share the segmented look of the view/edit switch. */
+.calendar-tabs{display:inline-flex;gap:2px;border-radius:10px;padding:3px;background:#edf0f4;margin:0 0 16px}
+.calendar-tabs button{min-height:34px;padding:6px 16px;border:0;border-radius:7px;background:transparent;color:#6b7684;font-size:14px;font-weight:600;box-shadow:none}
+.calendar-tabs button[aria-selected=true]{background:#fff;color:#191f28;box-shadow:0 1px 3px #202b4012}
+@media(max-width:640px){.calendar-tabs{display:flex}.calendar-tabs button{flex:1}}
 .incomplete-work h2{font-size:18px;margin:0}
 .incomplete-work h2 small{font-size:13px;color:#6b7684;font-weight:500}
 .overdue-count{font-size:12px;font-weight:600;color:#b83e24;background:#fff0e9;border-radius:7px;padding:5px 8px}
