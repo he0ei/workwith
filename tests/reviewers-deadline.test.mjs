@@ -18,6 +18,11 @@ test('reviewers are separate optional roles, validated and preserved through tit
  const cleared=change(edited,{type:'task.save',value:{...edited.tasks[0],reviewers:[]}},'jh');assert.deepEqual(cleared.tasks[0].reviewers,[]);
  for(const reviewers of [['outsider'],['sj','sj'],['jh'],['sy'],'sj'])assert.throws(()=>validate(state({...old,reviewers})),/검토자/);
 });
+test('허이사님·장팀장님 can review but cannot be assigned',()=>{
+ const old=task(),saved=change(state(old),{type:'task.save',value:{...old,reviewers:['jang','heo','sj']}},'jh');
+ assert.deepEqual(taskReviewers(saved.tasks[0]),['sj','heo','jang']);assert.deepEqual(taskPeople(saved.tasks[0]),['sy','jh']);
+ assert.throws(()=>validate(state({...old,assignee:'heo'})),/업무 값/);assert.throws(()=>validate(state({...old,collaborators:['jang']})),/협업자/);
+});
 test('backlog drag extends deadline, keeps original start and metadata, and does not create a period or task',()=>{
  const old={...task(),reviewers:['sj']},before=structuredClone(old),dates=extendDeadline(old,'2026-10-19');
  assert.deepEqual(dates,{due:'2026-10-19'});
