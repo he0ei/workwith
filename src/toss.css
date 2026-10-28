@@ -1108,3 +1108,28 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
 .schedule-bar.is-overdue:not(.schedule-completed){box-shadow:inset 3px 0 #d5704d,0 0 0 1px #df9b83}
 .is-completed .reviewer-chip,.schedule-completed .reviewer-chip{background:#e2e6eb;color:#687282}
 .is-completed .reviewer-role,.schedule-completed .reviewer-role{color:#768292}
+
+/* Calendar layout v2: one control bar, one period row, same place in both tabs. */
+.work-calendar-controls .calendar-tabs{margin:0}
+.calendar-period{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 16px;margin:4px 0 14px}
+.period-nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.period-label{min-width:118px;text-align:center;font-size:17px;font-weight:700;color:#191f28;font-variant-numeric:tabular-nums}
+.work-calendar .period-anchor{display:inline-flex;flex-direction:row;align-items:center;gap:6px;margin:0 0 0 8px;font-size:12px;color:#6b7684;white-space:nowrap}
+.period-anchor input{width:140px;min-height:34px;padding:6px 9px;font-size:13px;background:#fff;border:1px solid var(--work-line);border-radius:9px}
+.period-note{font-size:12px;color:#87919f}
+.work-calendar>.unscheduled-tray{margin:0 0 16px}
+@media(max-width:640px){.calendar-period{margin:2px 0 12px}.period-label{min-width:0;font-size:16px}.work-calendar .period-anchor{margin:0;width:100%}.period-anchor input{flex:1}.period-note{display:none}.work-calendar-controls .calendar-tabs{width:100%}}
+/* Work card v2: the task leads; people and status sit in a compact footer. */
+.week-card-open{padding:12px 13px 8px;gap:6px}
+.week-card-heading .week-card-title{font-size:15px;font-weight:700;line-height:1.45;color:#191f28}
+.week-card-description{font-size:12.5px;line-height:1.55;color:#6b7684;-webkit-line-clamp:2}
+.week-card-footer{padding:0 13px 10px;gap:8px;align-items:center}
+.week-card-bottom{gap:6px 8px;align-items:center}
+.week-assignees{width:auto;margin:0;gap:4px 8px;flex:0 1 auto}
+.week-assignee{font-size:12px;font-weight:600;gap:4px;line-height:1.4;color:#4e5968}
+.week-assignee-avatar{width:20px;height:20px;border-radius:6px;font-size:10px}
+.week-assignee-unassigned{font-size:12px;font-weight:500}
+.week-card-bottom .task-status-indicator{font-size:11px}
+.week-card-bottom .reviewer-chip{font-size:11px;padding:2px 6px;line-height:1.4}
+.task-complete{min-height:28px;padding:3px 9px;font-size:12px}
+@media(max-width:640px){.week-card-heading .week-card-title{font-size:16px}.week-card-description{font-size:13.5px}.week-assignee{font-size:13px}.week-assignee-avatar{width:22px;height:22px}.task-complete{min-height:40px}}
