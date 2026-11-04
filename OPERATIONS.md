@@ -1,6 +1,12 @@
 # GitHub Pages + Supabase 전환
 
-## 현재 접속 방식: 일반 주소
+## 현재 접속 방식: 팀원 로그인 (2026-11-04 복원)
+
+Supabase Auth 이메일·비밀번호 로그인을 다시 사용합니다. 앱은 `SharedStore`로 로그인하고, workspace Edge Function은 공개·공통 링크 플래그 없이 배포해 모든 요청의 access token을 `/auth/v1/user`와 `workwith_members`로 확인합니다. `202611040001_restore_login_access.sql`이 `202610190001_link_only_access.sql`에서 회수한 authenticated 읽기 권한을 되돌립니다. 쓰기는 계속 Edge Function(service_role)만 수행합니다.
+
+로그인은 로그인 시점부터 90일 동안 브라우저를 껐다 켜도 유지되며, 토큰 갱신으로 늘어나지 않습니다. 90일이 지나면 다시 로그인합니다. 이 제한은 브라우저에서 적용되며, 서버 측 세션 기간 제한(Supabase time-box)은 유료 플랜 기능이라 사용하지 않습니다. 계정은 Supabase Authentication에서 관리자가 만들고 `workwith_members`에 고정 ID(ceo/sj/sy/jh)로 연결합니다.
+
+## 이전 접속 방식: 일반 주소 (2026-11-04까지)
 
 `WorkspaceStore`와 서버 `WORKSPACE_PUBLIC_ACCESS: true`를 함께 배포하면 일반 Pages 주소로 누구나 업무·회의록·프로젝트·첨부를 조회·등록·수정·삭제할 수 있습니다. 개인별 공개 범위·사용자 인증은 제공하지 않으며 작성 이름은 표기용입니다. 운영 공개는 실행 직전 승인 이후에 적용합니다.
 

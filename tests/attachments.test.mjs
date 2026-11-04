@@ -6,7 +6,7 @@ const config={url:'https://test-project.supabase.co',key:'sb_publishable_test'};
 const owner='00000000-0000-4000-8000-000000000001';
 const png=()=>new File([new Uint8Array([137,80,78,71,13,10,26,10,1])],'검증.png',{type:'image/png'});
 const attachment={bucket:'workwith-artifacts',path:owner+'/00000000-0000-4000-8000-000000000002.png',name:'검증.png',type:'image/png',size:9};
-const storage=()=>({getItem:()=>JSON.stringify({access_token:'test-access',refresh_token:'test-refresh',expires_at:Date.now()/1000+3600}),setItem(){},removeItem(){}});
+const storage=()=>({getItem:()=>JSON.stringify({access_token:'test-access',refresh_token:'test-refresh',expires_at:Date.now()/1000+3600,loginAt:Date.now()}),setItem(){},removeItem(){}});
 test('attachment validation rejects unsupported, oversized and mismatched bytes before upload',async()=>{
  assert.equal((await attachmentBytes(png())).length,9);
  for(const file of [new File(['x'],'x.svg',{type:'image/svg+xml'}),new File(['x'],'x.png',{type:'image/png'}),new File([],'empty.pdf',{type:'application/pdf'}),{type:'application/pdf',name:'big.pdf',size:MAX_ATTACHMENT_BYTES+1}])await assert.rejects(attachmentBytes(file));

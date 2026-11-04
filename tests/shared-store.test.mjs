@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {SharedStore} from '../src/shared-store.js';
 const config={url:'https://test-project.supabase.co',key:'sb_publishable_test'};
 const memory=()=>{const values=new Map();return {values,getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v),removeItem:k=>values.delete(k)};};
-const session=()=>({access_token:'access',refresh_token:'refresh',expires_at:Math.floor(Date.now()/1000)+3600});
+const session=()=>({access_token:'access',refresh_token:'refresh',expires_at:Math.floor(Date.now()/1000)+3600,loginAt:Date.now()});
 test('signed-in password change verifies current password and same identity before PUT, stores no password',async()=>{
  const storage=memory(),calls=[];storage.setItem('workwith-supabase-session',JSON.stringify(session()));
  const store=new SharedStore(async(url,o)=>{calls.push({url,o});if(url.includes('grant_type=password'))return Response.json({...session(),user:{id:'u1'},access_token:'verified'});return Response.json({id:'u1',email:'member@example.com'});},storage,config);
@@ -37,4 +37,15 @@ test('first-login flag is loaded from server across browsers and prevents readin
  const otherBrowser=new SharedStore(fetcher,storage,config);assert.equal((await otherBrowser.read()).passwordChangeRequired,true);
  pending=false;assert.equal((await store.read()).passwordChangeRequired,false);assert.ok(calls.at(-1).endsWith('/workwith_snapshot'));
  assert.equal((await otherBrowser.read()).passwordChangeRequired,false);assert.ok(!JSON.stringify([...storage.values]).includes('password_change_required'));
+});
+test('login lasts 90 days from sign-in across restarts; refresh does not extend it',async()=>{
+ const storage=memory(),start=Date.UTC(2026,10,4);let now=start;const clock=()=>now;
+ const fetcher=async url=>url.includes('grant_type=password')?Response.json({access_token:'a1',refresh_token:'r1',expires_in:3600}):url.includes('grant_type=refresh_token')?Response.json({access_token:'a2',refresh_token:'r2',expires_in:3600}):url.includes('workwith_password_status')?Response.json({required:false}):Response.json({state:{},versions:{},user:'jh'});
+ await new SharedStore(fetcher,storage,config,clock).login('jh@example.com','password1');
+ assert.equal(JSON.parse(storage.getItem('workwith-supabase-session')).loginAt,start);
+ now=start+89*86400000;const reopened=new SharedStore(fetcher,storage,config,clock);assert.equal(await reopened.access(),'a2');
+ assert.equal(JSON.parse(storage.getItem('workwith-supabase-session')).loginAt,start);
+ now=start+90*86400000;await assert.rejects(reopened.access(),e=>e.status===401);assert.equal(storage.getItem('workwith-supabase-session'),null);
+ storage.setItem('workwith-supabase-session',JSON.stringify({access_token:'x',refresh_token:'y',expires_at:now/1000+3600}));
+ assert.equal(new SharedStore(fetcher,storage,config,clock).session,null);assert.equal(storage.getItem('workwith-supabase-session'),null);
 });
