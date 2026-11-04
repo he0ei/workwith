@@ -48,12 +48,15 @@ async function commit(action,base=editBase){
   const key={task:'tasks',project:'projects',kpi:'kpis',artifact:'artifacts',minutes:'minutes'}[action.type.split('.')[0]],id=action.value?.id||action.id;
   const snapshot=base||{revision:state.revision,versions};
   accept(await store.change(action,snapshot.revision,snapshot.versions[key+':'+id]??null));if(action.type==='task.status')recentStatusIds.add(id);render();toast(action.type==='task.status'?'상태를 변경했습니다.':'공유 DB에 저장했습니다.');
- }catch(err){connected=false;if(err.status===409)await refresh(true);throw err;}finally{busy=false;}
+ }catch(err){connected=false;if(endRejectedLogin(err))throw Error('로그인이 만료되었습니다. 다시 로그인해 주세요.');if(err.status===409)await refresh(true);throw err;}finally{busy=false;}
 }
+// A rejected login (expired, revoked or past 90 days) reloads into the login screen
+// instead of leaving stale work on screen.
+function endRejectedLogin(err){if(err?.status!==401||!store.clearSession)return false;clearTimeout(syncTimer);store.clearSession();location.reload?.();return true;}
 async function refresh(force=false){
  if(store.preview||passwordChangeRequired||!state||boardDrag.isDragging()||scheduleDrag.isDragging()||monthDrag.isDragging()||unscheduledDrag.isDragging()||syncing||busy&&!force||document.hidden)return;syncing=true;
  try{const v=await store.version();if(force||v.revision!==state.revision){accept(await store.read());if(view!=='minutes')render();}else{connected=true;lastSync=new Date().toLocaleTimeString('ko-KR');} }
- catch(err){if(connected)toast(err.message);connected=false;}finally{syncing=false;updateSyncLabel();}
+ catch(err){if(endRejectedLogin(err))return;if(connected)toast(err.message);connected=false;}finally{syncing=false;updateSyncLabel();}
 }
 function updateSyncLabel(){const count=$('#today-task-count');if(count&&state){const total=calendarDayTasks(state,user).length;count.textContent=total;count.setAttribute('aria-label','오늘 일정 업무 '+total+'개');}const label=$('#sync-label');if(label)label.textContent=store.preview?'디자인 미리보기 · 입력 내용은 저장되지 않습니다.':connected?'공유 DB 연결 · 마지막 확인 '+lastSync:'연결 확인 필요 · 저장 결과를 확인하세요.';}
 function schedule(){clearTimeout(syncTimer);if(store.preview||passwordChangeRequired||document.hidden||!state)return;syncTimer=setTimeout(async()=>{await refresh();schedule();},user==='ceo'?60000:30000);}
