@@ -41,12 +41,12 @@ export class SharedStore{
  }
  async updatePassword(password){
   if(!this.recoveryPending)throw Error('이메일의 복구 링크에서 다시 시작하세요.');
-  if(typeof password!=='string'||password.length<8||password.length>128)throw Error('새 비밀번호는 8~128자로 입력하세요.');
+  if(typeof password!=='string'||!password)throw Error('새 비밀번호를 입력하세요.');
   await this.http('/auth/v1/user',{password},await this.access(),'PUT');this.recoveryPending=false;this.storage.removeItem('workwith-recovery-pending');
  }
  async changePassword(currentPassword,password){
   if(this.passwordChanging)throw Error('비밀번호 변경이 진행 중입니다.');
-  if(typeof password!=='string'||password.length<8||password.length>128)throw Error('새 비밀번호는 8~128자로 입력하세요.');
+  if(typeof password!=='string'||!password)throw Error('새 비밀번호를 입력하세요.');
   if(!currentPassword)throw Error('현재 비밀번호를 입력하세요.');
   if(currentPassword===password)throw Error('현재 비밀번호와 다른 비밀번호를 입력하세요.');
   this.passwordChanging=true;
