@@ -18,3 +18,11 @@ test('public workspace errors offer retry without login, private-link or key ins
  fail=false;await events.click({target:{closest:s=>s==='[data-action]'?{dataset:{action:'retry-workspace'}}:null}});
  html=nodes.get('#app').innerHTML;assert.match(html,/팀 캘린더/);assert.ok(!html.includes('다시 연결'));
 });
+test('a rejected login while working clears the session and reloads into the login screen',async()=>{
+ const nodes=new Map(['#app','#editor','#toast','#form-error','#sync-label'].map(id=>[id,{innerHTML:'',textContent:'',open:false,classList:{add(){},remove(){}},showModal(){this.open=true;},close(){this.open=false;}}])),events={};
+ let reloads=0;globalThis.document={hidden:false,querySelector:s=>nodes.get(s),addEventListener:(name,fn)=>{const old=events[name];events[name]=old?e=>Promise.all([old(e),fn(e)]):fn;}};globalThis.window={addEventListener(){},history:{replaceState(){}}};globalThis.location={protocol:'https:',hash:'',pathname:'/workwith/',search:'',reload(){reloads++;}};globalThis.setTimeout=()=>1;globalThis.clearTimeout=()=>{};
+ let cleared=0,rejected=false;const denied=()=>{const e=Error('세션이 만료되었거나 로그인 정보가 올바르지 않습니다.');e.status=401;return e;};
+ const store={configured:()=>true,clearSession(){cleared++;},read:async()=>({state:empty(),versions:{},user:'jh',passwordChangeRequired:false}),version:async()=>{if(rejected)throw denied();return {revision:0};},change:async()=>{throw denied();}};
+ await start(store);assert.match(nodes.get('#app').innerHTML,/팀 캘린더/);
+ rejected=true;await events.visibilitychange();assert.equal(cleared,1);assert.equal(reloads,1);assert.ok(!nodes.get('#toast').textContent.includes('세션이 만료'));
+});
