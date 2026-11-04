@@ -1,12 +1,12 @@
-import {USERS,validate,change,registerDrafts,visible} from '../src/model.js';
+import {USERS,validate,change,registerDrafts,visible,inScope,scopeState} from '../src/model.js';
 export const entities=['projects','tasks','kpis','artifacts','minutes','history'];
 export class ApiError extends Error{constructor(status,message){super(message);this.status=status;}}
 const map={project:'projects',task:'tasks',kpi:'kpis',artifact:'artifacts',minutes:'minutes'};
-export function publicState(snapshot,actor){
- const state=structuredClone(snapshot.state),versions={};state.tasks=state.tasks.filter(t=>visible(t,actor));state.history=state.history.filter(h=>h.visibility==='shared'||h.owner===actor);
+export function publicState(snapshot,actor,scope=null){
+ const state=scopeState(structuredClone(snapshot.state),scope),versions={};state.tasks=state.tasks.filter(t=>visible(t,actor));state.history=state.history.filter(h=>h.visibility==='shared'||h.owner===actor);
  for(const e of entities)for(const x of state[e])versions[e+':'+x.id]=snapshot.versions[e+':'+x.id];return {state,versions,user:actor};
 }
-export async function mutate(repository,body,actor,{sharedAccess=false}={}){
+export async function mutate(repository,body,actor,{sharedAccess=false,scope=null}={}){
  if(!USERS.some(u=>u.id===actor))throw new ApiError(403,'등록된 팀원만 접근할 수 있습니다.');
  if(!body||!Number.isInteger(body.revision)||body.revision<0)throw new ApiError(400,'저장 버전이 필요합니다.');
  const a=body.action,batch=a?.type==='drafts.register',key=map[a?.type?.split('.')[0]];
@@ -19,6 +19,7 @@ export async function mutate(repository,body,actor,{sharedAccess=false}={}){
    if((before.versions[key+':'+id]??null)!==body.baseVersion)throw new ApiError(409,'다른 사람이 먼저 수정했습니다. 입력한 내용을 확인하고 최신 데이터에서 다시 저장하세요.');
    if(!sharedAccess&&key==='minutes'&&a.type==='minutes.save'&&a.value.author!==actor)throw new ApiError(403,'회의록 작성자는 로그인 사용자여야 합니다.');
   }
+  if(scope&&a?.type==='project.delete')throw new ApiError(403,'담당 프로젝트 밖의 항목은 변경할 수 없습니다.');
   if((batch||a.type.endsWith('.delete'))&&s.revision!==body.revision)throw new ApiError(409,'다른 변경이 반영되었습니다. 최신 데이터를 확인한 뒤 다시 시도하세요.');
   let next;try{next=batch?registerDrafts(s,a.value,actor):change(s,a,actor);}catch(err){throw new ApiError(400,err.message);}
   next.history=[];next.revision=s.revision+1;const upserts=[],deletes=[];
@@ -26,8 +27,10 @@ export async function mutate(repository,body,actor,{sharedAccess=false}={}){
    for(const x of next[e])if(JSON.stringify(x)!==JSON.stringify(old.get(x.id)))upserts.push({entity:e,id:x.id,payload:x});
    for(const x of s[e])if(!fresh.has(x.id))deletes.push({entity:e,id:x.id});
   }
+  // A scoped member may only touch rows inside their project, before and after the change.
+  if(scope){const outside=[...upserts.map(u=>!inScope(u.entity,u.payload,scope)||(s[u.entity].some(x=>x.id===u.id)&&!inScope(u.entity,s[u.entity].find(x=>x.id===u.id),scope))),...deletes.map(d=>!inScope(d.entity,s[d.entity].find(x=>x.id===d.id),scope))];if(outside.some(Boolean))throw new ApiError(403,'담당 프로젝트 밖의 항목은 변경할 수 없습니다.');}
   if(upserts.length+deletes.length>200)throw new ApiError(400,'한 번에 처리할 항목이 너무 많습니다. 나누어 등록하거나 삭제하세요.');
-  if(await repository.commit(s.revision,upserts,deletes))return publicState(await repository.load(),actor);
+  if(await repository.commit(s.revision,upserts,deletes))return publicState(await repository.load(),actor,scope);
  }
  throw new ApiError(409,'다른 사용자의 저장이 진행 중입니다. 잠시 후 다시 시도하세요.');
 }
