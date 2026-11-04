@@ -59,3 +59,10 @@ test('public attachment gateway retains 5MB/type/path checks and never exposes s
  assert.equal((await handle(request({op:'file.upload',name:'fake.pdf',type:'application/pdf',data:btoa('not pdf')}),env,fetcher)).status,400);
  assert.equal((await handle(request({op:'file.upload',name:'big.pdf',type:'application/pdf',data:'a'.repeat(Math.ceil(5*1024*1024/3)*4+1)}),env,fetcher)).status,400);
 });
+test('deployed workspace function requires login again: no public or link access flag in its entry points',async()=>{
+ const {readFile}=await import('node:fs/promises');
+ for(const file of ['../scripts/build-functions.mjs','../supabase/functions/workspace/index.ts']){const text=await readFile(new URL(file,import.meta.url),'utf8');assert.ok(!text.includes('WORKSPACE_PUBLIC_ACCESS'),file);assert.ok(!text.includes('WORKSPACE_LINK_SHA256'),file);}
+ const env={APP_ORIGIN:'https://he0ei.github.io',SUPABASE_URL:'https://test-project.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'service'};
+ const r=await handle(new Request(env.SUPABASE_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({op:'state'})}),env,()=>assert.fail('must not reach the database'));
+ assert.equal(r.status,401);
+});

@@ -9,7 +9,6 @@ import {compactTaskTitle} from './task-heading.js';
 import {calendarTasks,calendarDayTasks,weeklyCalendar,weekRange,shiftDay,weekDays} from './weekly-calendar.js';
 import {icon} from './icons.js';
 import {SharedStore} from './shared-store.js';
-import {WorkspaceStore} from './workspace-store.js';
 import {DesignPreviewStore} from './preview-store.js';
 import {FieldError,validateEditor,clearFieldErrors,showFieldError,clearFieldError} from './form-validation.js';
 import {installUnscheduledDrag} from './unscheduled-drag.js';
@@ -18,7 +17,7 @@ import {monthWeeks,installMonthDrag} from './monthly-calendar.js';
 import {installBoardDrag} from './board-drag.js';
 export async function start(store=null){
 const previewMode=location.protocol==='file:';
-store=previewMode?new DesignPreviewStore():(store||new WorkspaceStore());
+store=previewMode?new DesignPreviewStore():(store||new SharedStore());
 const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let filePreview,projectColorMap=new Map();
 const openPreview=async attachment=>{filePreview??=createFilePreview($('#file-preview'),{load:a=>store.downloadAttachment(a)});await filePreview.show(attachment);};

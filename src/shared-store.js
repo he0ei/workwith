@@ -1,13 +1,19 @@
 import {empty} from './model.js';
 import {SUPABASE_URL,SUPABASE_KEY} from './config.js';
 import {ATTACHMENT_BUCKET,TASK_ATTACHMENT_BUCKET,ATTACHMENT_TYPES,attachmentBytes,validAttachment} from './attachments.js';
+// A login lasts 90 days from sign-in, across browser restarts; token refreshes do not extend it.
+export const SESSION_MAX_MS=90*24*60*60*1000;
+const persistentStorage=()=>{try{localStorage.setItem('workwith-storage-check','1');localStorage.removeItem('workwith-storage-check');return localStorage;}catch{return sessionStorage;}};
 export class SharedStore{
- constructor(fetcher=(...args)=>fetch(...args),storage=sessionStorage,config={url:SUPABASE_URL,key:SUPABASE_KEY}){
+ constructor(fetcher=(...args)=>fetch(...args),storage=persistentStorage(),config={url:SUPABASE_URL,key:SUPABASE_KEY},now=()=>Date.now()){
+  this.now=now;
   this.fetcher=fetcher;this.storage=storage;this.config=config;this.refreshing=null;this.recoveryPending=storage.getItem('workwith-recovery-pending')==='1';
   try{this.session=JSON.parse(storage.getItem('workwith-supabase-session')||'null');}catch{this.session=null;storage.removeItem('workwith-supabase-session');}
+  if(this.session&&this.loginExpired())this.clearSession();
  }
+ loginExpired(){return !Number.isFinite(this.session?.loginAt)||this.now()-this.session.loginAt>=SESSION_MAX_MS;}
  configured(){return /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(this.config.url)&&Boolean(this.config.key);}
- saveSession(s){this.session={access_token:s.access_token,refresh_token:s.refresh_token,expires_at:s.expires_at||Math.floor(Date.now()/1000)+s.expires_in};this.storage.setItem('workwith-supabase-session',JSON.stringify(this.session));}
+ saveSession(s,{fresh=false}={}){this.session={access_token:s.access_token,refresh_token:s.refresh_token,expires_at:s.expires_at||Math.floor(this.now()/1000)+s.expires_in,loginAt:fresh||!this.session?.loginAt?this.now():this.session.loginAt};this.storage.setItem('workwith-supabase-session',JSON.stringify(this.session));}
  clearSession(){this.session=null;this.storage.removeItem('workwith-supabase-session');this.recoveryPending=false;this.storage.removeItem('workwith-recovery-pending');}
  async http(path,body,token,method){
   if(!this.configured())throw Error('Supabase 프로젝트 연결 설정이 필요합니다. 관리자가 배포 설정을 확인하세요.');
@@ -16,8 +22,9 @@ export class SharedStore{
   if(!r.ok){const error=Error(value.error_description||value.msg||value.message||value.error||'서버 연결에 실패했습니다.');error.status=r.status;throw error;}return value;
  }
  async access(){
+  if(this.session&&this.loginExpired())this.clearSession();
   if(!this.session) {const e=Error('로그인이 필요합니다.');e.status=401;throw e;}
-  if(this.session.expires_at<=Date.now()/1000+60){
+  if(this.session.expires_at<=this.now()/1000+60){
    if(!this.refreshing)this.refreshing=this.http('/auth/v1/token?grant_type=refresh_token',{refresh_token:this.session.refresh_token}).then(s=>this.saveSession(s)).catch(err=>{if(err.status===400||err.status===401)this.clearSession();throw err;}).finally(()=>{this.refreshing=null;});
    await this.refreshing;
   }
@@ -30,7 +37,7 @@ export class SharedStore{
   if(!access_token||!refresh_token||!Number.isFinite(expires_in)||expires_in<=0)throw Error('복구 링크가 올바르지 않습니다. 새 링크를 요청하세요.');
   // Verify with Auth before accepting any token from the URL.
   const user=await this.http('/auth/v1/user',undefined,access_token);if(!user.id)throw Error('복구 계정을 확인할 수 없습니다.');
-  this.saveSession({access_token,refresh_token,expires_in});this.recoveryPending=true;this.storage.setItem('workwith-recovery-pending','1');return true;
+  this.saveSession({access_token,refresh_token,expires_in},{fresh:true});this.recoveryPending=true;this.storage.setItem('workwith-recovery-pending','1');return true;
  }
  async updatePassword(password){
   if(!this.recoveryPending)throw Error('이메일의 복구 링크에서 다시 시작하세요.');
@@ -54,7 +61,7 @@ export class SharedStore{
  }
  async login(email,password){
   this.recoveryPending=false;this.storage.removeItem('workwith-recovery-pending');
-  const s=await this.http('/auth/v1/token?grant_type=password',{email,password});this.saveSession(s);
+  const s=await this.http('/auth/v1/token?grant_type=password',{email,password});this.saveSession(s,{fresh:true});
   try{return await this.read();}catch(err){await this.logout().catch(()=>{});throw err;}
  }
  async logout(){try{if(this.session)await this.http('/auth/v1/logout?scope=local',{},await this.access());}finally{this.clearSession();}}
