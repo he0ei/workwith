@@ -6,6 +6,13 @@ Supabase Auth 이메일·비밀번호 로그인을 다시 사용합니다. 앱�
 
 로그인은 로그인 시점부터 90일 동안 브라우저를 껐다 켜도 유지되며, 토큰 갱신으로 늘어나지 않습니다. 90일이 지나면 다시 로그인합니다. 이 제한은 브라우저에서 적용되며, 서버 측 세션 기간 제한(Supabase time-box)은 유료 플랜 기능이라 사용하지 않습니다. 계정은 Supabase Authentication에서 관리자가 만들고 `workwith_members`에 고정 ID(ceo/sj/sy/jh)로 연결합니다.
 
+### 프로젝트 전용 팀원 (예: 박소현 · SANMO.AE)
+
+`workwith_members.project_scope`에 프로젝트 ID를 넣으면 그 팀원은 해당 프로젝트만 봅니다(`202611040002`, `202611040003`). DB 읽기(RLS), 첨부 파일, Edge Function 저장 모두 같은 규칙(`workwith_in_scope` / `inScope`)을 적용합니다. 업무·KPI·결과물은 그 프로젝트 것만, 회의록은 그 프로젝트에만 연결된 것만 보입니다. 범위 안의 업무·회의록·결과물은 보고 수정할 수 있고, 프로젝트 생성·삭제와 범위 밖 변경은 서버가 거부합니다. `project_scope`가 비어 있는 기존 팀원은 변화가 없습니다.
+
+계정 연결: 관리자가 Supabase Authentication에서 계정을 만든 뒤
+`insert into public.workwith_members(user_id,member_id,password_change_required,project_scope) values('<Auth UUID>','shpark',true,'<프로젝트 ID>');`
+
 ## 이전 접속 방식: 일반 주소 (2026-11-04까지)
 
 `WorkspaceStore`와 서버 `WORKSPACE_PUBLIC_ACCESS: true`를 함께 배포하면 일반 Pages 주소로 누구나 업무·회의록·프로젝트·첨부를 조회·등록·수정·삭제할 수 있습니다. 개인별 공개 범위·사용자 인증은 제공하지 않으며 작성 이름은 표기용입니다. 운영 공개는 실행 직전 승인 이후에 적용합니다.

@@ -1,4 +1,4 @@
-export const USERS = [{id:'ceo',name:'대표님',initial:'대'},{id:'sj',name:'정승재',initial:'승'},{id:'sy',name:'양승연',initial:'연'},{id:'jh',name:'최재희',initial:'희'}];
+export const USERS = [{id:'ceo',name:'대표님',initial:'대'},{id:'sj',name:'정승재',initial:'승'},{id:'sy',name:'양승연',initial:'연'},{id:'jh',name:'최재희',initial:'희'},{id:'shpark',name:'박소현',initial:'소'}];
 // Reviewer-only people: they can be chosen as reviewers but are not assignees or app members.
 export const REVIEWERS=[...USERS,{id:'heo',name:'허이사님',initial:'허'},{id:'jang',name:'장팀장님',initial:'장'}];
 // Offered in the editor; others stay valid so earlier assignments keep saving.
@@ -24,6 +24,18 @@ export const visibleTasks=(state,user)=>state.tasks.filter(t=>visible(t,user));
 export const taskPeople=task=>USERS.filter(u=>u.id===task.assignee||(task.visibility==='shared'&&(task.collaborators||[]).includes(u.id))).map(u=>u.id);
 export const taskReviewers=task=>REVIEWERS.filter(u=>(task.reviewers||[]).includes(u.id)).map(u=>u.id);
 export const participates=(task,user)=>taskPeople(task).includes(user);
+// Mirrors public.workwith_in_scope: a member limited to one project sees only its rows.
+// A meeting note counts only when every project it links to is that project.
+export function inScope(entity,item,scope){
+ if(!item)return false;
+ if(entity==='projects')return item.id===scope;
+ if(entity==='minutes'){const ids=Array.isArray(item.projectIds)?item.projectIds:[];return ['',scope].includes(item.projectId||'')&&ids.every(id=>id===scope)&&(item.projectId===scope||ids.includes(scope));}
+ return (item.projectId||'')===scope;
+}
+export function scopeState(state,scope){
+ if(!scope)return state;
+ const s={...state};for(const e of ['projects','tasks','kpis','artifacts','minutes','history'])s[e]=state[e].filter(x=>inScope(e,x,scope));return s;
+}
 export function validate(state){
  required(state&&state.version===1&&Number.isInteger(state.revision)&&state.revision>=0,'지원하지 않는 저장 데이터 형식입니다.');
  for(const key of ['projects','tasks','kpis','artifacts','minutes','history']){

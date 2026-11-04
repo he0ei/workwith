@@ -1,6 +1,6 @@
 import {dateOK,taskPeople} from './model.js';
 import {shiftDay} from './weekly-calendar.js';
-export const PERSON_COLORS={jh:{background:'#dff3ff',accent:'#0878ae'},sy:{background:'#eee5ff',accent:'#7045b5'},sj:{background:'#e9f5d0',accent:'#557620'},ceo:{background:'#edf0f4',accent:'#526170'}};
+export const PERSON_COLORS={jh:{background:'#dff3ff',accent:'#0878ae'},sy:{background:'#eee5ff',accent:'#7045b5'},sj:{background:'#e9f5d0',accent:'#557620'},ceo:{background:'#edf0f4',accent:'#526170'},shpark:{background:'#ffe8e3',accent:'#b4462f'}};
 export const daysBetween=(a,b)=>Math.round((Date.parse(b+'T12:00:00Z')-Date.parse(a+'T12:00:00Z'))/86400000);
 export function barPosition(task,range){
  const start=task.start||task.due,end=task.due||task.start;
