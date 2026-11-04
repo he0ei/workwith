@@ -26,3 +26,12 @@ test('a rejected login while working clears the session and reloads into the log
  await start(store);assert.match(nodes.get('#app').innerHTML,/팀 캘린더/);
  rejected=true;await events.visibilitychange();assert.equal(cleared,1);assert.equal(reloads,1);assert.ok(!nodes.get('#toast').textContent.includes('세션이 만료'));
 });
+test('a project-scoped member gets only the calendar, board and settings menus',async()=>{
+ const nodes=new Map(['#app','#editor','#toast','#form-error','#sync-label'].map(id=>[id,{innerHTML:'',textContent:'',open:false,classList:{add(){},remove(){}},showModal(){this.open=true;},close(){this.open=false;}}])),events={};
+ globalThis.document={hidden:false,querySelector:s=>nodes.get(s),addEventListener:(name,fn)=>{const old=events[name];events[name]=old?e=>Promise.all([old(e),fn(e)]):fn;}};globalThis.window={addEventListener(){},history:{replaceState(){}}};globalThis.location={protocol:'https:',hash:'',pathname:'/workwith/',search:''};globalThis.setTimeout=()=>1;globalThis.clearTimeout=()=>{};
+ const read=scope=>async()=>({state:empty(),versions:{},user:scope?'shpark':'jh',scope,passwordChangeRequired:false});
+ await start({configured:()=>true,read:read('p-sanmo'),version:async()=>({revision:0})});
+ let html=nodes.get('#app').innerHTML;for(const view of ['projects','minutes','archive'])assert.ok(!html.includes(`data-nav="${view}"`),view);for(const view of ['calendar','collab','settings'])assert.match(html,new RegExp(`data-nav="${view}"`));
+ await events.click({target:{closest:s=>s==='[data-nav]'?{dataset:{nav:'minutes'}}:null}});assert.match(nodes.get('#app').innerHTML,/aria-current="page"[^>]*>[\s\S]*?팀 캘린더|data-nav="calendar"[^>]*aria-current="page"/);
+ await start({configured:()=>true,read:read(null),version:async()=>({revision:0})});html=nodes.get('#app').innerHTML;for(const view of ['projects','minutes','archive'])assert.match(html,new RegExp(`data-nav="${view}"`));
+});
