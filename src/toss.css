@@ -1136,3 +1136,7 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
 
 /* 박소현 (project-scoped member) */
 .avatar-shpark{background:#ffe8e3;color:#b4462f}
+
+/* No-login viewer: same screens, edit and delete controls hidden. */
+.viewer-mode [data-action="project"],.viewer-mode [data-action="kpi"],.viewer-mode [data-action="kpi-edit"],.viewer-mode [data-action="artifact"],.viewer-mode [data-action="artifact-edit"],.viewer-mode [data-action="minutes-edit"],.viewer-mode [data-action="task-project"],.viewer-mode [data-action$="-delete"],.viewer-mode [data-action="task-complete"],.viewer-mode [data-action="project-toggle"],.viewer-mode .empty>span,.viewer-mode .empty>small{display:none!important}
+.viewer-label{font-size:13px;color:#6b7684}

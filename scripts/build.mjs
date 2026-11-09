@@ -13,7 +13,7 @@ if(process.env.REQUIRE_SUPABASE==='true'&&(!url||!key))throw Error('GitHub Varia
 const dist=new URL('../dist/',import.meta.url);await rm(dist,{recursive:true,force:true});await mkdir(dist,{recursive:true});
 let html=await readFile(new URL('../index.html',import.meta.url),'utf8');if(url)html=html.replace("connect-src 'self'","connect-src 'self' "+url);
 await writeFile(new URL('index.html',dist),html);await cp(new URL('../src/',import.meta.url),new URL('src/',dist),{recursive:true});
-await writeFile(new URL('src/config.js',dist),`export const SUPABASE_URL=${JSON.stringify(url)};\nexport const SUPABASE_KEY=${JSON.stringify(key)};\n`);
+await writeFile(new URL('src/config.js',dist),`export const SUPABASE_URL=${JSON.stringify(url)};\nexport const SUPABASE_KEY=${JSON.stringify(key)};\nexport const VIEWER_MODE=${process.env.VIEWER_MODE==='true'};\n`);
 await writeFile(new URL('.nojekyll',dist),'');console.log('Build complete: dist/ (GitHub Pages, static assets only)');
 
 // One version for the app and its module imports prevents mixed cached releases.
