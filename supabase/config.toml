@@ -3,3 +3,7 @@ project_id = "workwith"
 # Public workspace mode is explicitly enabled by the production function entrypoint.
 # Requests do not require a login or invitation token; server-side validation remains.
 verify_jwt = false
+
+[functions.viewer]
+# Called server-to-server by the viewer site with its own secret, not a user JWT.
+verify_jwt = false
