@@ -13,3 +13,5 @@ const core=(await readFile(new URL('../server/workspace.js',import.meta.url),'ut
 const linkHandler=(await readFile(new URL('../server/link-access.js',import.meta.url),'utf8')).replace(/^import .*;\n/gm,'').replace(/^export /gm,'');
 const handler=(await readFile(new URL('../server/supabase-handler.js',import.meta.url),'utf8')).replace(/^import .*;\n/gm,'').replace(/^export /gm,'');
 await writeFile(new URL('dashboard.ts',shared),attachments+'\n'+model+'\n'+core+'\n'+linkHandler+'\n'+handler+"\nDeno.serve(request=>handle(request,{APP_ORIGIN:'https://he0ei.github.io',SUPABASE_URL:Deno.env.get('SUPABASE_URL'),SUPABASE_SERVICE_ROLE_KEY:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}));\n");
+const viewer=(await readFile(new URL('../server/viewer-handler.js',import.meta.url),'utf8')).replace(/^export /gm,'');
+await writeFile(new URL('viewer.ts',shared),viewer+"\nDeno.serve(request=>handleViewer(request,{SUPABASE_URL:Deno.env.get('SUPABASE_URL'),SUPABASE_SERVICE_ROLE_KEY:Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),VIEWER_SECRET:Deno.env.get('VIEWER_SECRET')}));\n");
