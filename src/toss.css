@@ -1140,3 +1140,11 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
 /* No-login viewer: same screens, edit and delete controls hidden. */
 .viewer-mode [data-action="project"],.viewer-mode [data-action="kpi"],.viewer-mode [data-action="kpi-edit"],.viewer-mode [data-action="artifact"],.viewer-mode [data-action="artifact-edit"],.viewer-mode [data-action="minutes-edit"],.viewer-mode [data-action="task-project"],.viewer-mode [data-action$="-delete"],.viewer-mode [data-action="task-complete"],.viewer-mode [data-action="project-toggle"],.viewer-mode .empty>span,.viewer-mode .empty>small{display:none!important}
 .viewer-label{font-size:13px;color:#6b7684}
+
+/* Click a date on the month board to add a task on that day. */
+.month-week .timeline-date[data-action="task-on-date"]{cursor:pointer;position:relative}
+.month-week .timeline-date[data-action="task-on-date"]:hover,.month-week .timeline-date[data-action="task-on-date"]:focus-visible{background:#f2f7ff;color:#1b64da;outline:none}
+.month-week .timeline-date[data-action="task-on-date"]::after{content:'＋';position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:12px;color:#3182f6;opacity:0}
+.month-week .timeline-date[data-action="task-on-date"]:hover::after,.month-week .timeline-date[data-action="task-on-date"]:focus-visible::after{opacity:1}
+.day-agenda h3{display:flex;align-items:center;gap:4px}.day-agenda .day-add{margin-left:auto;font-size:13px}
+.viewer-mode .month-week .timeline-date[data-action="task-on-date"]{cursor:default;pointer-events:none}.viewer-mode .day-add{display:none!important}
