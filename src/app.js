@@ -17,6 +17,7 @@ import {installUnscheduledDrag} from './unscheduled-drag.js';
 import {barPosition,barPeople,installScheduleDrag} from './schedule-bars.js';
 import {monthWeeks,installMonthDrag} from './monthly-calendar.js';
 import {installBoardDrag} from './board-drag.js';
+import {installDateRangeSelect} from './date-range-select.js';
 export async function start(store=null){
 const previewMode=location.protocol==='file:';
 store=previewMode?new DesignPreviewStore():(store||(VIEWER_MODE?new ViewerStore():new SharedStore()));
@@ -60,7 +61,7 @@ async function commit(action,base=editBase){
 // instead of leaving stale work on screen.
 function endRejectedLogin(err){if(err?.status!==401||!store.clearSession)return false;clearTimeout(syncTimer);store.clearSession();location.reload?.();return true;}
 async function refresh(force=false){
- if(store.preview||passwordChangeRequired||!state||boardDrag.isDragging()||scheduleDrag.isDragging()||monthDrag.isDragging()||unscheduledDrag.isDragging()||syncing||busy&&!force||document.hidden)return;syncing=true;
+ if(store.preview||passwordChangeRequired||!state||boardDrag.isDragging()||scheduleDrag.isDragging()||monthDrag.isDragging()||unscheduledDrag.isDragging()||dateSelect.isSelecting()||syncing||busy&&!force||document.hidden)return;syncing=true;
  try{const v=await store.version();if(force||v.revision!==state.revision){accept(await store.read());if(view!=='minutes')render();}else{connected=true;lastSync=new Date().toLocaleTimeString('ko-KR');} }
  catch(err){if(endRejectedLogin(err))return;if(connected)toast(err.message);connected=false;}finally{syncing=false;updateSyncLabel();}
 }
@@ -84,6 +85,7 @@ const calendarEditOptions={
 };
 const scheduleDrag=installScheduleDrag(document,calendarEditOptions);
 const monthDrag=installMonthDrag(document,calendarEditOptions);
+const dateSelect=installDateRangeSelect(document,{canStart:()=>!store.viewer&&view==='calendar'&&calendarTab==='month'&&!busy&&!$('#editor').open&&!monthDrag.isDragging()&&!unscheduledDrag.isDragging(),select:({start,due})=>taskEditor('',{start,due})});
 const unscheduledDrag=installUnscheduledDrag(document,calendarEditOptions);
 const late=t=>{const due=[t.due,...(t.scheduleSlots||[]).map(s=>s.due)].filter(Boolean).sort().at(-1);return !!due&&due<today()&&t.status!=='완료';};
 const peopleLabel=t=>taskPeople(t).map(id=>names[id]).join(' · ')||'미지정';
@@ -235,7 +237,7 @@ document.addEventListener('click',async e=>{if(artifactSaving){toast('첨부 파
  if(a==='calendar-view'||a==='calendar-edit'){calendarEditing=a==='calendar-edit'&&!store.preview;scheduleDrag.cancel();monthDrag.cancel();unscheduledDrag.cancel();render();return;}
  if(a==='mobile-week'){if(['previous','current','next'].includes(id))mobileWeek=id;render();return;}
  if(a==='month-day'){if(dateOK(id)&&id){monthDay=id;month=id.slice(0,7);render();}return;}
- if(a==='task-on-date'){if(id&&dateOK(id))taskEditor('',{start:id,due:id});return;}
+ if(a==='task-on-date'){if(id&&dateOK(id)&&!dateSelect.consumeClick())taskEditor('',{start:id,due:id});return;}
  if(a==='calendar-edit-task'){calendarEditing=!store.preview;render();taskEditor(id);return;}
  if(a==='week-prev'||a==='week-next'||a==='week-today'){weekAnchor=a==='week-today'?today():shiftDay(weekAnchor,a==='week-prev'?-7:7);month=weekAnchor.slice(0,7);monthDay=weekAnchor;render();return;}
  if(a==='task-complete'){const task=tasks().find(t=>t.id===id);if(!task)throw Error('업무를 찾을 수 없습니다.');if(task.status!=='완료')await commit({type:'task.status',id,status:'완료'},null);return;}
