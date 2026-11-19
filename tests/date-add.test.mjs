@@ -29,3 +29,17 @@ test('a project-scoped member starts new tasks in their project; the viewer cann
  await start({preview:true,viewer:true,configured:()=>true,read:async()=>({state,versions:{},user:'ceo',passwordChangeRequired:false})});
  await h.click('task-on-date','2026-11-20');assert.equal(h.nodes.get('#editor').open,false);
 });
+
+test('dragging across month days opens a new task with that start and due date',async()=>{
+ const {nodes,events,click}=harness();
+ await start({configured:()=>true,read:async()=>({state,versions:{},user:'jh',passwordChangeRequired:false}),version:async()=>({revision:0})});
+ await click('calendar-tab','month');
+ const board={dataset:{weekTimeline:'2026-11-15',monthWeek:'true'},getBoundingClientRect:()=>({left:0,right:700,width:700})};
+ document.elementFromPoint=()=>({closest:s=>s==='[data-month-week]'?board:null});
+ const target={closest:s=>s==='[data-month-week]'?board:null,setPointerCapture(){},hasPointerCapture:()=>false};
+ await events.pointerdown({target,button:0,pointerId:7,pointerType:'mouse',clientX:150,clientY:10});
+ await events.pointermove({pointerId:7,clientX:450,clientY:10,cancelable:true,preventDefault(){}});
+ await events.pointerup({pointerId:7,clientX:450,clientY:10});delete document.elementFromPoint;
+ const editor=nodes.get('#editor').innerHTML;assert.equal(nodes.get('#editor').open,true);
+ assert.match(editor,/name="start"[^>]*value="2026-11-16"|value="2026-11-16"[^>]*name="start"/);assert.match(editor,/name="due"[^>]*value="2026-11-19"|value="2026-11-19"[^>]*name="due"/);
+});

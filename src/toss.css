@@ -1148,3 +1148,7 @@ dialog.task-editor { width:min(720px,calc(100vw - 24px)); border-radius:16px; }
 .month-week .timeline-date[data-action="task-on-date"]:hover::after,.month-week .timeline-date[data-action="task-on-date"]:focus-visible::after{opacity:1}
 .day-agenda h3{display:flex;align-items:center;gap:4px}.day-agenda .day-add{margin-left:auto;font-size:13px}
 .viewer-mode .month-week .timeline-date[data-action="task-on-date"]{cursor:default;pointer-events:none}.viewer-mode .day-add{display:none!important}
+
+/* Drag across empty days of the month board to pick a new task's date range. */
+.month-week .schedule-rows,.month-week .week-days{user-select:none;-webkit-user-select:none}
+.month-week .timeline-date.range-selected{background:#dbeafe;color:#1b64da;box-shadow:inset 0 -2px #3182f6}
